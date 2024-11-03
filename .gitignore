@@ -1,0 +1,7 @@
+/target
+/.cache
+/dist
+# Programul original „Furnica” (Ant v2.00), păstrat doar ca referință
+/Furnica/
+
+.env
