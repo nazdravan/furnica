@@ -1,0 +1,183 @@
+Ant executor file
+[table description]
+1 10
+3
+2 7 n
+2 9 i
+3 9 c
+4 9 o
+5 9 t
+6 9 n
+7 9 r
+8 9 f
+9 9 e
+10 9 a
+1 10 *
+666 666 *
+procedura pina_jos
+cit nu_e_margine executa
+jos
+sfirsit cit
+sfirsit procedura
+
+procedura litera_sus
+repeta 8 ori
+sus
+sfirsit repeta
+sfirsit procedura
+
+inceput
+repeta 2 ori
+dreapta
+sfirsit repeta
+
+litera_sus
+
+dreapta
+sus
+
+repeta 2 ori
+stinga
+sfirsit repeta
+
+dreapta
+pina_jos
+
+dreapta
+
+litera_sus
+
+dreapta
+sus
+
+repeta 2 ori
+stinga
+sfirsit repeta
+
+pina_jos
+
+repeta 3 ori
+dreapta
+sfirsit repeta
+
+litera_sus
+
+dreapta
+sus
+
+repeta 3 ori
+stinga
+sfirsit repeta
+
+pina_jos
+
+repeta 4 ori
+dreapta
+sfirsit repeta
+
+litera_sus
+
+dreapta
+sus
+
+repeta 4 ori
+stinga
+sfirsit repeta
+
+repeta 3 ori
+dreapta
+sfirsit repeta
+
+pina_jos
+
+dreapta
+
+litera_sus
+
+dreapta
+sus
+
+repeta 4 ori
+stinga
+sfirsit repeta
+pina_jos
+dreapta
+litera_sus
+dreapta
+sus
+stinga
+
+pina_jos
+
+repeta 6 ori
+stinga
+sfirsit repeta
+
+sus
+
+dreapta
+jos
+dreapta
+
+repeta 7 ori
+sus
+sfirsit repeta
+
+stinga
+sus
+
+repeta 4 ori
+dreapta
+sfirsit repeta
+
+jos
+dreapta
+sus
+
+pina_jos
+
+repeta 6 ori
+stinga
+sfirsit repeta
+
+repeta 3 ori
+sus
+sfirsit repeta
+
+repeta 6 ori
+dreapta
+sfirsit repeta
+
+jos
+dreapta
+
+repeta 6 ori
+sus
+sfirsit repeta
+
+pina_jos
+repeta 3 ori
+stinga
+sfirsit repeta
+
+repeta 7 ori
+sus
+sfirsit repeta
+
+stinga
+sus
+
+repeta 4 ori
+dreapta
+sfirsit repeta
+jos
+dreapta
+
+sus
+
+pina_jos
+dreapta
+litera_sus
+
+sfirsit
+
