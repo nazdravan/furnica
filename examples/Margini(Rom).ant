@@ -1,0 +1,51 @@
+Ant executor file
+[table description]
+1 1
+1
+1 1 *
+2 5 M
+3 5 A
+4 5 R
+5 5 G
+6 5 I
+7 5 N
+8 5 I
+666 666 *
+// Furnica ocolește tabela pe margini.
+// Ea privește în direcția în care s-a mișcat ultima dată,
+// de aceea fiecare procedură începe cu un pas.
+
+PROCEDURA jos_pina_la_margine
+JOS
+CÎT NU_E_MARGINE EXECUTĂ
+    JOS
+SFÎRȘIT CÎT
+SFÎRȘIT PROCEDURA
+
+PROCEDURA dreapta_pina_la_margine
+DREAPTA
+CÎT NU_E_MARGINE EXECUTĂ
+    DREAPTA
+SFÎRȘIT CÎT
+SFÎRȘIT PROCEDURA
+
+PROCEDURA sus_pina_la_margine
+SUS
+CÎT NU_E_MARGINE EXECUTĂ
+    SUS
+SFÎRȘIT CÎT
+SFÎRȘIT PROCEDURA
+
+PROCEDURA stinga_pina_la_margine
+STÎNGA
+CÎT NU_E_MARGINE EXECUTĂ
+    STÎNGA
+SFÎRȘIT CÎT
+SFÎRȘIT PROCEDURA
+
+ÎNCEPUT
+jos_pina_la_margine
+dreapta_pina_la_margine
+sus_pina_la_margine
+stinga_pina_la_margine
+SFÎRȘIT

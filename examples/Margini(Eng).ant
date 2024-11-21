@@ -1,0 +1,51 @@
+Ant executor file
+[table description]
+1 1
+1
+1 1 *
+2 5 M
+3 5 A
+4 5 R
+5 5 G
+6 5 I
+7 5 N
+8 5 I
+666 666 *
+// The ant walks around the edges of the table.
+// It faces the direction it last moved in,
+// so every procedure starts with one step.
+
+PROCEDURE down_to_edge
+DOWN
+WHILE NOT_BORDER DO
+    DOWN
+END WHILE
+END PROCEDURE
+
+PROCEDURE right_to_edge
+RIGHT
+WHILE NOT_BORDER DO
+    RIGHT
+END WHILE
+END PROCEDURE
+
+PROCEDURE up_to_edge
+UP
+WHILE NOT_BORDER DO
+    UP
+END WHILE
+END PROCEDURE
+
+PROCEDURE left_to_edge
+LEFT
+WHILE NOT_BORDER DO
+    LEFT
+END WHILE
+END PROCEDURE
+
+BEGIN
+down_to_edge
+right_to_edge
+up_to_edge
+left_to_edge
+END

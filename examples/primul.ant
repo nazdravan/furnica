@@ -1,0 +1,16 @@
+Ant executor file
+[table description]
+1 1
+1
+1 1 *
+4 3 A
+666 666 *
+// Primul meu program: furnica împinge litera A
+ÎNCEPUT
+REPETĂ 3 ORI
+    DREAPTA
+SFÎRȘIT REPETĂ
+REPETĂ 4 ORI
+    JOS
+SFÎRȘIT REPETĂ
+SFÎRȘIT
