@@ -3,6 +3,6 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP=furnica
 # Singurul loc al versiunii: [package] version din Cargo.toml.
-VERSION="$(sed -n '/^\[package\]/,/^\[/{s/^version = "\(.*\)"/\1/p}' "$ROOT/Cargo.toml" | head -1)"
+VERSION="$(sed -n '/^\[package\]/,/^\[/{s/^version = "\(.*\)"/\1/p;}' "$ROOT/Cargo.toml" | head -1)"
 OUT="$ROOT/dist/release"
 export ROOT APP VERSION OUT
