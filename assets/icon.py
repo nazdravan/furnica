@@ -50,3 +50,9 @@ for side in (-1, 1):
 icon = img.resize((256, 256), Image.LANCZOS)
 icon.save(f'{out}/icon.png', optimize=True)
 icon.save(f'{out}/furnica.ico', sizes=[(s, s) for s in (16, 24, 32, 48, 64, 128, 256)])
+
+# macOS: insigna ocupă ~80% din pătrat (grila de iconițe Apple), restul e transparent.
+mac = Image.new('RGBA', (N, N), (0, 0, 0, 0))
+inner = round(N * 824 / 1024)
+mac.paste(img.resize((inner, inner), Image.LANCZOS), ((N - inner) // 2, (N - inner) // 2))
+mac.save(f'{out}/furnica.icns', sizes=[(s, s) for s in (16, 32, 64, 128, 256, 512, 1024)])
