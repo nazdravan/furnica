@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Furnica
+GenericName=Executant pentru învățarea algoritmilor
+GenericName[en]=Algorithm learning executor
+GenericName[ru]=Исполнитель для обучения алгоритмам
+Comment=Furnica execută programul pe o tabelă cu litere
+Comment[en]=The ant runs your program on a table of letters
+Comment[ru]=Муравей выполняет программу на таблице с буквами
+Exec=furnica %f
+Icon=furnica
+Terminal=false
+Categories=Education;ComputerScience;
+Keywords=algoritmi;programare;algorithms;programming;
