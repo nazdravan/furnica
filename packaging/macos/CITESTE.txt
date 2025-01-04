@@ -1,0 +1,22 @@
+FURNICA 3 — versiunea pentru macOS (Apple Silicon și Intel, macOS 10.13+)
+
+Instalare: trageți Furnica.app în dosarul Aplicații (Applications).
+Se poate porni și direct din dosarul dezarhivat.
+
+  Furnica.app    programul (universal: M1/M2/M3/M4 și Intel)
+  Exemple/       programe-exemplu (și cele din versiunea originală)
+
+Prima pornire. Aplicația nu este semnată cu un certificat Apple, așa că
+macOS o blochează („Furnica” nu poate fi deschis / dezvoltator neidentificat):
+
+  - macOS 14 și mai vechi: click dreapta (sau Control-click) pe Furnica.app
+    → Deschide → Deschide;
+  - macOS 15 și mai nou: încercați o dată să o deschideți, apoi
+    Setări de sistem → Confidențialitate și securitate → „Deschide oricum”.
+
+Sau, din Terminal, o singură dată:
+  xattr -dr com.apple.quarantine /Applications/Furnica.app
+
+Fișierele .ant se deschid din meniul „Deschide...” al programului sau
+trăgându-le în fereastra Furnicii. Scurtăturile folosesc tasta ⌘:
+⌘N, ⌘O, ⌘S.
