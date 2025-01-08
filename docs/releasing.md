@@ -53,20 +53,30 @@ artefacte ale rulării. Nu se creează niciun release.
 
 | Fișier | Pentru | Unde se construiește |
 |---|---|---|
-| `furnica-<v>-linux-x86_64.tar.gz` | Linux pe 64 de biți | `packaging/linux/package.sh`, ubuntu-22.04 |
+| `furnica-<v>-linux-x86_64.AppImage` | Linux pe 64 de biți, un singur fișier executabil | `packaging/linux/appimage.sh`, ubuntu-22.04 |
+| `furnica-<v>-linux-x86_64.tar.gz` | Linux pe 64 de biți, arhivă simplă | `packaging/linux/package.sh`, ubuntu-22.04 |
+| `furnica-<v>-macos-universal.zip` | macOS 10.13+, Apple Silicon și Intel (`Furnica.app`) | `packaging/macos/package.sh`, macos-latest |
 | `furnica-<v>-windows-x64-portable.zip` | Windows 10/11 pe 64 de biți | `packaging/windows/package.ps1 -Arch x64` |
 | `furnica-<v>-windows-x86-portable.zip` | Windows 10/11 pe 32 de biți | `packaging/windows/package.ps1 -Arch x86` |
 | `furnica-<v>-windows7-x86-portable.zip` | Windows 7, 8, 10, 11 (32 și 64 de biți), cu Mesa pentru calculatoarele fără driver video | `packaging/windows7/package.sh`, container Arch Linux |
 | `SHA256SUMS.txt` | sumele de control ale fișierelor de mai sus | jobul `release` |
 
-Toate scripturile din `packaging/` pot fi rulate și local. Rezultatul ajunge în
+Toate scripturile din `packaging/` pot fi rulate și local (cel pentru macOS
+doar pe un Mac). Rezultatul ajunge în
 `dist/release/`.
 
 ## De știut
 
 - **Fișierele nu sunt semnate digital.** La prima pornire, Windows SmartScreen
   va afișa „Windows a protejat computerul”; se continuă cu *Mai multe
-  informații → Executare oricum*.
+  informații → Executare oricum*. Pe macOS, aplicația are doar o semnătură
+  ad-hoc, deci Gatekeeper o blochează la prima pornire; ocolirea e descrisă în
+  `packaging/macos/CITESTE.txt`, inclus în arhivă. Semnarea și notarizarea
+  reală cer un cont Apple Developer.
+- `appimagetool` se descarcă la prima rulare în `.cache/` (versiunea
+  *continuous*). AppImage-ul conține doar programul; bibliotecile grafice
+  (OpenGL, X11/Wayland) sunt luate din sistem. Fiind construit pe Ubuntu
+  22.04, merge pe distribuțiile cu glibc 2.35 sau mai nou.
 - Build-ul pentru Windows 7 folosește un Rust nightly fixat
   (`NIGHTLY` în `packaging/windows7/package.sh`), pentru că ținta
   `i686-win7-windows-gnu` nu e garantată stabilă. Nightly-ul se schimbă doar
