@@ -49,7 +49,7 @@ Nu e nevoie de instalare:
 - **macOS:** `Furnica.app` se trage în *Aplicații*. Nu e semnată cu un
   certificat Apple, deci la prima pornire: click dreapta → *Deschide*
   (pe macOS 15+: *Setări de sistem → Confidențialitate și securitate →
-  Deschide oricum*).
+  Deschide oricum*), vezi [macOS](#macos).
 
 ### Din cod sursă
 
@@ -248,6 +248,30 @@ pornită pe un Windows 7 real.
 
 ---
 
+## macOS
+
+Arhiva `furnica-<versiune>-macos-universal.zip` conține `Furnica.app`, un
+singur program pentru Mac-urile cu Apple Silicon (M1…M4) și cu Intel, de la
+macOS 10.13 în sus. Se construiește doar pe un Mac (în release, pe runner-ul
+macOS din GitHub Actions):
+
+```sh
+packaging/macos/package.sh   # rezultatul: dist/release/furnica-<versiune>-macos-universal.zip
+```
+
+Aplicația are doar o semnătură ad-hoc, nu una cu certificat Apple Developer,
+așa că Gatekeeper o blochează la prima pornire. Se deschide cu click dreapta →
+*Deschide* sau o dată din Terminal:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Furnica.app
+```
+
+Scurtăturile folosesc ⌘ în loc de Ctrl. **Atenție:** varianta se compilează
+pentru ambele procesoare, dar nu a fost încă pornită pe un Mac real.
+
+---
+
 ## Structura codului
 
 | Fișier | Conținut |
@@ -263,8 +287,8 @@ pornită pe un Windows 7 real.
 | `src/i18n.rs` | textele interfeței în română, rusă și engleză |
 | `src/software_gl.rs` | repornirea cu OpenGL software (Mesa) pe Windows |
 | `examples/` | exemplele originale (`conferinta`, `svi99`) și cele noi |
-| `assets/` | fonturi, iconița (`icon.py` o redesenează după `src/ant.rs`), `banner.py` pentru bannerul din README (`python3 assets/banner.py FURNICA -o docs/assets/furnica-banner.png`) |
-| `packaging/` | arhivele pentru Linux, Windows 10/11 și Windows 7 |
+| `assets/` | fonturi, iconițele (`icon.py` le redesenează după `src/ant.rs`, inclusiv `furnica.icns` pentru macOS), `banner.py` pentru bannerul din README (`python3 assets/banner.py FURNICA -o docs/assets/furnica-banner.png`) |
+| `packaging/` | AppImage și arhiva pentru Linux, `Furnica.app` pentru macOS, arhivele pentru Windows 10/11 și Windows 7 |
 
 Programul original e păstrat ca referință în dosarul `Furnica/` (ignorat de git).
 
