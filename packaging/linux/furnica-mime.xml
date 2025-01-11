@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tipul fișierelor .ant, ca dublu-click pe ele să deschidă Furnica. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-furnica">
+    <comment>Furnica program</comment>
+    <comment xml:lang="ro">Program Furnica</comment>
+    <comment xml:lang="ru">Программа «Муравей»</comment>
+    <sub-class-of type="text/plain"/>
+    <magic priority="60">
+      <match type="string" offset="0" value="Ant executor file"/>
+    </magic>
+    <glob pattern="*.ant"/>
+    <icon name="furnica"/>
+  </mime-type>
+</mime-info>
