@@ -11,4 +11,5 @@ Exec=furnica %f
 Icon=furnica
 Terminal=false
 Categories=Education;ComputerScience;
+MimeType=application/x-furnica;
 Keywords=algoritmi;programare;algorithms;programming;
