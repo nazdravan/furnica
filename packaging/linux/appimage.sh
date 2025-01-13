@@ -25,6 +25,8 @@ mkdir -p "$appdir/usr/bin" "$appdir/usr/share/applications" \
 install -m 755 target/release/furnica "$appdir/usr/bin/furnica"
 cp packaging/linux/furnica.desktop "$appdir/usr/share/applications/"
 cp assets/icon.png "$appdir/usr/share/icons/hicolor/256x256/apps/furnica.png"
+mkdir -p "$appdir/usr/share/mime/packages"
+cp packaging/linux/furnica-mime.xml "$appdir/usr/share/mime/packages/furnica.xml"
 cp README.md LICENSE "$appdir/usr/share/doc/furnica/"
 cp assets/fonts/LICENSE.txt "$appdir/usr/share/doc/furnica/LICENTE.txt"
 # appimagetool cere fișierul .desktop și iconița și în rădăcina AppDir.
