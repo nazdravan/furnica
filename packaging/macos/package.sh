@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Aplicația pentru macOS: dist/release/furnica-<versiune>-macos-universal.zip
+# Aplicația pentru macOS: dist/release/furnica-<versiune>-macos-universal.dmg
 # Furnica.app universal (Apple Silicon + Intel). Se rulează pe un Mac (sau pe
 # runner-ul macOS din GitHub Actions): are nevoie de Xcode Command Line Tools.
 set -euo pipefail
@@ -19,7 +19,7 @@ done
 name=$APP-$VERSION-macos-universal
 stage=$ROOT/dist/stage/$name
 app=$stage/Furnica.app
-rm -rf "$stage" "$OUT/$name.zip"
+rm -rf "$stage" "$OUT/$name.dmg"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$stage/Exemple" "$OUT"
 lipo -create -output "$app/Contents/MacOS/furnica" \
     target/aarch64-apple-darwin/release/furnica target/x86_64-apple-darwin/release/furnica
@@ -36,6 +36,10 @@ codesign --force --deep --sign - "$app"
 codesign --verify --deep --strict "$app"
 lipo -info "$app/Contents/MacOS/furnica"
 
-# ditto păstrează atributele și semnătura pachetului .app.
-ditto -c -k --keepParent "$stage" "$OUT/$name.zip"
-echo "Gata: $OUT/$name.zip"
+# Imaginea de disc: Furnica.app lângă o scurtătură spre Applications, ca
+# instalarea să fie o simplă tragere a aplicației peste ea.
+ln -s /Applications "$stage/Applications"
+hdiutil create -volname "Furnica $VERSION" -srcfolder "$stage" -fs HFS+ \
+    -format UDZO -imagekey zlib-level=9 -ov "$OUT/$name.dmg"
+hdiutil verify "$OUT/$name.dmg"
+echo "Gata: $OUT/$name.dmg"
