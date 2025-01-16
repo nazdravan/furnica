@@ -1,7 +1,7 @@
 FURNICA 3 — versiunea pentru macOS (Apple Silicon și Intel, macOS 10.13+)
 
-Instalare: trageți Furnica.app în dosarul Aplicații (Applications).
-Se poate porni și direct din dosarul dezarhivat.
+Instalare: deschideți fișierul .dmg și trageți Furnica.app peste
+scurtătura Applications din aceeași fereastră.
 
   Furnica.app    programul (universal: M1/M2/M3/M4 și Intel)
   Exemple/       programe-exemplu (și cele din versiunea originală)
