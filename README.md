@@ -33,8 +33,9 @@ Arhivele gata construite sunt pe pagina [Releases](../../releases):
 
 ```
 furnica-<versiune>-linux-x86_64.AppImage         # Linux, un singur fișier
+furnica-<versiune>-linux-x86_64.deb              # Ubuntu / Debian / Mint
 furnica-<versiune>-linux-x86_64.tar.gz           # Linux, arhivă
-furnica-<versiune>-macos-universal.zip           # macOS (Apple Silicon și Intel)
+furnica-<versiune>-macos-universal.dmg           # macOS (Apple Silicon și Intel)
 furnica-<versiune>-windows-x64-portable.zip      # Windows 10/11, 64 de biți
 furnica-<versiune>-windows-x86-portable.zip      # Windows 10/11, 32 de biți
 furnica-<versiune>-windows7-x86-portable.zip     # Windows 7, 8, 10, 11 (32 și 64 de biți)
@@ -45,8 +46,11 @@ Nu e nevoie de instalare:
 
 - **Windows:** se dezarhivează și se pornește `Furnica.exe`;
 - **Linux:** AppImage-ul se face executabil și se pornește
-  (`chmod +x furnica-*.AppImage && ./furnica-*.AppImage`);
-- **macOS:** `Furnica.app` se trage în *Aplicații*. Nu e semnată cu un
+  (`chmod +x furnica-*.AppImage && ./furnica-*.AppImage`); pe Ubuntu / Debian
+  se poate instala `.deb`-ul (`sudo apt install ./furnica-*.deb`): Furnica
+  apare în meniu, iar fișierele `.ant` se deschid cu dublu-click;
+- **macOS:** se deschide `.dmg`-ul și `Furnica.app` se trage peste
+  *Applications*. Nu e semnată cu un
   certificat Apple, deci la prima pornire: click dreapta → *Deschide*
   (pe macOS 15+: *Setări de sistem → Confidențialitate și securitate →
   Deschide oricum*), vezi [macOS](#macos).
@@ -250,13 +254,13 @@ pornită pe un Windows 7 real.
 
 ## macOS
 
-Arhiva `furnica-<versiune>-macos-universal.zip` conține `Furnica.app`, un
+Imaginea de disc `furnica-<versiune>-macos-universal.dmg` conține `Furnica.app`, un
 singur program pentru Mac-urile cu Apple Silicon (M1…M4) și cu Intel, de la
 macOS 10.13 în sus. Se construiește doar pe un Mac (în release, pe runner-ul
 macOS din GitHub Actions):
 
 ```sh
-packaging/macos/package.sh   # rezultatul: dist/release/furnica-<versiune>-macos-universal.zip
+packaging/macos/package.sh   # rezultatul: dist/release/furnica-<versiune>-macos-universal.dmg
 ```
 
 Aplicația are doar o semnătură ad-hoc, nu una cu certificat Apple Developer,
@@ -288,7 +292,7 @@ pentru ambele procesoare, dar nu a fost încă pornită pe un Mac real.
 | `src/software_gl.rs` | repornirea cu OpenGL software (Mesa) pe Windows |
 | `examples/` | exemplele originale (`conferinta`, `svi99`) și cele noi |
 | `assets/` | fonturi, iconițele (`icon.py` le redesenează după `src/ant.rs`, inclusiv `furnica.icns` pentru macOS), `banner.py` pentru bannerul din README (`python3 assets/banner.py FURNICA -o docs/assets/furnica-banner.png`) |
-| `packaging/` | AppImage și arhiva pentru Linux, `Furnica.app` pentru macOS, arhivele pentru Windows 10/11 și Windows 7 |
+| `packaging/` | AppImage, `.deb` și arhiva pentru Linux, `Furnica.app` pentru macOS, arhivele pentru Windows 10/11 și Windows 7 |
 
 Programul original e păstrat ca referință în dosarul `Furnica/` (ignorat de git).
 
