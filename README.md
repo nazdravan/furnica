@@ -301,10 +301,10 @@ Programul original e păstrat ca referință în dosarul `Furnica/` (ignorat de 
 ## Release
 
 Versiunea există într-un singur loc, `Cargo.toml`, și se schimbă cu
-`packaging/version.sh set 3.1.0`. La un push pe ramura `release`, GitHub Actions
-construiește arhivele pentru toate platformele și creează un **draft** de
-release, care se publică manual. Pașii sunt descriși în
-[`docs/releasing.md`](docs/releasing.md).
+`packaging/version.sh set 3.1.0`. Release-urile sunt **automate**: la un push
+pe `main` cu o versiune încă nepublicată, GitHub Actions construiește pachetele
+pentru toate platformele și publică release-ul. Un push cu aceeași versiune
+rulează doar testele. Detalii în [`docs/releasing.md`](docs/releasing.md).
 
 ## Teste
 
