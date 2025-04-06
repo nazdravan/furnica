@@ -55,6 +55,8 @@ creează niciun release. Așa se pot încerca pachetele înainte de a mări vers
 | `furnica-<v>-linux-x86_64.deb` | Ubuntu / Debian / Mint (Ubuntu 22.04+), cu meniu și asocierea fișierelor `.ant` | `packaging/linux/deb.sh`, ubuntu-22.04 |
 | `furnica-<v>-linux-x86_64.tar.gz` | Linux pe 64 de biți, arhivă simplă | `packaging/linux/package.sh`, ubuntu-22.04 |
 | `furnica-<v>-macos-universal.dmg` | macOS 10.13+, Apple Silicon și Intel (`Furnica.app`) | `packaging/macos/package.sh`, macos-latest |
+| `furnica-<v>-windows-x64.msi` | Windows 10/11 pe 64 de biți, instalator: meniul Start, asocierea fișierelor `.ant`, actualizare peste versiunea veche | `packaging/windows/msi.ps1 -Arch x64` (WiX Toolset v5) |
+| `furnica-<v>-windows-x86.msi` | Windows 10/11 pe 32 de biți, instalator | `packaging/windows/msi.ps1 -Arch x86` |
 | `furnica-<v>-windows-x64-portable.zip` | Windows 10/11 pe 64 de biți | `packaging/windows/package.ps1 -Arch x64` |
 | `furnica-<v>-windows-x86-portable.zip` | Windows 10/11 pe 32 de biți | `packaging/windows/package.ps1 -Arch x86` |
 | `furnica-<v>-windows7-x86-portable.zip` | Windows 7, 8, 10, 11 (32 și 64 de biți), cu Mesa pentru calculatoarele fără driver video | `packaging/windows7/package.sh`, container Arch Linux |
@@ -66,12 +68,16 @@ doar pe un Mac). Rezultatul ajunge în
 
 ## De știut
 
-- **Fișierele nu sunt semnate digital.** La prima pornire, Windows SmartScreen
-  va afișa „Windows a protejat computerul”; se continuă cu *Mai multe
+- **Fișierele nu sunt semnate digital.** La prima pornire (și la instalarea
+  `.msi`-ului), Windows SmartScreen va afișa „Windows a protejat computerul”; se continuă cu *Mai multe
   informații → Executare oricum*. Pe macOS, aplicația are doar o semnătură
   ad-hoc, deci Gatekeeper o blochează la prima pornire; ocolirea e descrisă în
   `packaging/macos/CITESTE.txt`, inclus în `.dmg`. Semnarea și notarizarea
   reală cer un cont Apple Developer.
+- `.msi`-ul primește doar partea numerică a versiunii (`3.1.0-rc.1` → `3.1.0`),
+  pentru că MSI nu acceptă altceva. `UpgradeCode` din
+  `packaging/windows/furnica.wxs` nu se schimbă niciodată: după el, un `.msi` nou
+  înlocuiește versiunea instalată.
 - `appimagetool` se descarcă la prima rulare în `.cache/` (versiunea
   *continuous*). AppImage-ul conține doar programul; bibliotecile grafice
   (OpenGL, X11/Wayland) sunt luate din sistem. Fiind construit pe Ubuntu
