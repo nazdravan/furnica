@@ -36,15 +36,20 @@ furnica-<versiune>-linux-x86_64.AppImage         # Linux, un singur fișier
 furnica-<versiune>-linux-x86_64.deb              # Ubuntu / Debian / Mint
 furnica-<versiune>-linux-x86_64.tar.gz           # Linux, arhivă
 furnica-<versiune>-macos-universal.dmg           # macOS (Apple Silicon și Intel)
+furnica-<versiune>-windows-x64.msi               # Windows 10/11, 64 de biți, instalator
+furnica-<versiune>-windows-x86.msi               # Windows 10/11, 32 de biți, instalator
 furnica-<versiune>-windows-x64-portable.zip      # Windows 10/11, 64 de biți
 furnica-<versiune>-windows-x86-portable.zip      # Windows 10/11, 32 de biți
 furnica-<versiune>-windows7-x86-portable.zip     # Windows 7, 8, 10, 11 (32 și 64 de biți)
 SHA256SUMS.txt                                   # sumele de control
 ```
 
-Nu e nevoie de instalare:
+Pe fiecare platformă:
 
-- **Windows:** se dezarhivează și se pornește `Furnica.exe`;
+- **Windows:** `.msi`-ul instalează Furnica în *Program Files*, cu scurtătură în
+  meniul Start, iar fișierele `.ant` se deschid cu dublu-click (pentru mai
+  multe calculatoare: `msiexec /i furnica-*.msi /qn`). Fără instalare: se
+  dezarhivează zip-ul și se pornește `Furnica.exe`;
 - **Linux:** AppImage-ul se face executabil și se pornește
   (`chmod +x furnica-*.AppImage && ./furnica-*.AppImage`); pe Ubuntu / Debian
   se poate instala `.deb`-ul (`sudo apt install ./furnica-*.deb`): Furnica
@@ -292,7 +297,7 @@ pentru ambele procesoare, dar nu a fost încă pornită pe un Mac real.
 | `src/software_gl.rs` | repornirea cu OpenGL software (Mesa) pe Windows |
 | `examples/` | exemplele originale (`conferinta`, `svi99`) și cele noi |
 | `assets/` | fonturi, iconițele (`icon.py` le redesenează după `src/ant.rs`, inclusiv `furnica.icns` pentru macOS), `banner.py` pentru bannerul din README (`python3 assets/banner.py FURNICA -o docs/assets/furnica-banner.png`) |
-| `packaging/` | AppImage, `.deb` și arhiva pentru Linux, `Furnica.app` pentru macOS, arhivele pentru Windows 10/11 și Windows 7 |
+| `packaging/` | AppImage, `.deb` și arhiva pentru Linux, `Furnica.app` pentru macOS, `.msi` și arhivele pentru Windows 10/11, arhiva pentru Windows 7 |
 
 Programul original e păstrat ca referință în dosarul `Furnica/` (ignorat de git).
 
