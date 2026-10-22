@@ -16,7 +16,7 @@ $msiVersion = $version -replace '-.*$', ''
 
 $stage = "dist/stage/furnica-$version-windows-$Arch-portable"
 if (-not (Test-Path "$stage/Furnica.exe")) {
-    throw "Lipseste $stage: rulati intai packaging/windows/package.ps1 -Arch $Arch"
+    throw "Lipseste ${stage}: rulati intai packaging/windows/package.ps1 -Arch $Arch"
 }
 $out = "dist/release/furnica-$version-windows-$Arch.msi"
 wix build packaging/windows/furnica.wxs -arch $Arch -pdbtype none `
