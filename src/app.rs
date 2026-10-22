@@ -266,6 +266,9 @@ pub struct FurnicaApp {
     analyzed: Option<String>,
     /// Porțiunea de text la care trebuie dus cursorul (click în lista de probleme).
     jump_to: Option<Range<usize>>,
+    /// Selecția pusă în editor după ce e desenat, odată cu focusul (click-ul
+    /// pe un buton i-ar lua focusul în același cadru).
+    focus_editor: Option<Range<usize>>,
 }
 
 /// O problemă de afișat în editor și în lista de probleme.
@@ -313,6 +316,7 @@ impl FurnicaApp {
             analysis: lang::Analysis::default(),
             analyzed: None,
             jump_to: None,
+            focus_editor: None,
         };
         app.apply_theme(&cc.egui_ctx);
         if let Some(p) = open {
@@ -664,7 +668,7 @@ impl FurnicaApp {
 
     /// Inserează o comandă: la cursor sau, fără cursor, înainte de SFÎRȘIT.
     /// Procedurile se inserează înainte de ÎNCEPUT.
-    fn insert_snippet(&mut self, ctx: &egui::Context, snippet: &str, procedure: bool) {
+    fn insert_snippet(&mut self, snippet: &str, procedure: bool) {
         let code = &mut self.s.code;
         let chars = code.chars().count();
         let line_start = |pred: fn(&str) -> bool, last: bool| {
@@ -716,14 +720,7 @@ impl FurnicaApp {
         self.s.dirty = true;
         let cursor = code[..byte].chars().count() + text.chars().count();
         self.cursor = Some(cursor);
-
-        let id = egui::Id::unique(EDITOR_ID);
-        let mut state = egui::text_edit::TextEditState::load(ctx, id).unwrap_or_default();
-        state
-            .cursor
-            .set_char_range(Some(CCursorRange::one(CCursor::new(cursor))));
-        state.store(ctx, id);
-        ctx.memory_mut(|m| m.request_focus(id));
+        self.focus_editor = Some(cursor..cursor);
     }
 
     // ------------------------------------------------------------- UI ---
@@ -981,7 +978,6 @@ impl FurnicaApp {
     fn editor_panel(&mut self, ui: &mut Ui) {
         let t = self.t();
         let kw = &t.kw;
-        let ctx = ui.ctx().clone();
         let pal = Pal::new(ui.visuals().dark_mode);
         let editable = self.mode == Mode::Idle;
 
@@ -1065,7 +1061,7 @@ impl FurnicaApp {
                                         .family(FontFamily::Monospace),
                                 );
                                 if ui.add(b).on_hover_text(snippet).clicked() {
-                                    self.insert_snippet(&ctx, snippet, *procedure);
+                                    self.insert_snippet(snippet, *procedure);
                                 }
                             }
                         });
@@ -1201,12 +1197,7 @@ impl FurnicaApp {
         if let Some(span) = self.jump_to.take() {
             let a = char_index(&self.s.code, span.start);
             let b = char_index(&self.s.code, span.end);
-            let mut state = egui::text_edit::TextEditState::load(ui.ctx(), id).unwrap_or_default();
-            state
-                .cursor
-                .set_char_range(Some(CCursorRange::two(CCursor::new(a), CCursor::new(b))));
-            state.store(ui.ctx(), id);
-            ui.ctx().memory_mut(|m| m.request_focus(id));
+            self.focus_editor = Some(a..b);
             scroll_to = Some(a);
         }
 
@@ -1238,6 +1229,17 @@ impl FurnicaApp {
         }
         if let Some(r) = out.cursor_range {
             self.cursor = Some(r.primary.index.into());
+        }
+        // Fără focus, egui strânge selecția la cursor: selecția și focusul se
+        // pun după ce editorul e desenat.
+        if let Some(sel) = self.focus_editor.take() {
+            let mut state = egui::text_edit::TextEditState::load(ui.ctx(), id).unwrap_or_default();
+            state.cursor.set_char_range(Some(CCursorRange::two(
+                CCursor::new(sel.start),
+                CCursor::new(sel.end),
+            )));
+            state.store(ui.ctx(), id);
+            out.response.response.request_focus();
         }
 
         let diags = if self.analyzed.as_ref() == Some(&self.s.code) {
@@ -2248,6 +2250,9 @@ mod tests {
                 h.state().s.code,
                 "ÎNCEPUT\nSUS\nSTÎNGA\nREPETĂ 4 ORI\n    JOS\nSFÎRȘIT REPETĂ\nSFÎRȘIT\n"
             );
+            // Cursorul rămâne în editor după click pe buton.
+            let editor = egui::Id::unique(EDITOR_ID);
+            assert!(h.ctx.memory(|m| m.has_focus(editor)));
             // Procedurile ajung înainte de ÎNCEPUT.
             h.get_by_label("PROCEDURA").click();
             h.run_steps(2);
@@ -2289,6 +2294,22 @@ mod tests {
             ] {
                 h.get_by_label(fix).click();
                 h.run_steps(3);
+                // Cuvântul corectat rămâne selectat în editor.
+                let editor = egui::Id::unique(EDITOR_ID);
+                assert!(h.ctx.memory(|m| m.has_focus(editor)));
+                let range = egui::text_edit::TextEditState::load(&h.ctx, editor)
+                    .and_then(|s| s.cursor.char_range())
+                    .unwrap()
+                    .as_sorted_char_range();
+                let selected: String = h
+                    .state()
+                    .s
+                    .code
+                    .chars()
+                    .skip(range.start.0)
+                    .take(range.end.0 - range.start.0)
+                    .collect();
+                assert_eq!(Some(selected.as_str()), fix.split(' ').next_back());
             }
             let a = &h.state().analysis;
             assert!(a.errors.is_empty() && a.warnings.is_empty(), "{a:?}");
