@@ -1053,20 +1053,23 @@ impl FurnicaApp {
                         true,
                     ),
                 ];
+                // Deplasările pe primul rând, structurile de control pe al doilea.
                 ui.add_enabled_ui(editable, |ui| {
-                    ui.horizontal_wrapped(|ui| {
-                        ui.spacing_mut().item_spacing = vec2(6.0, 6.0);
-                        for (label, color, snippet, procedure) in &snippets {
-                            let b = egui::Button::new(
-                                RichText::new(label)
-                                    .color(*color)
-                                    .family(FontFamily::Monospace),
-                            );
-                            if ui.add(b).on_hover_text(snippet).clicked() {
-                                self.insert_snippet(&ctx, snippet, *procedure);
+                    ui.spacing_mut().item_spacing = vec2(6.0, 6.0);
+                    for row in [&snippets[..4], &snippets[4..]] {
+                        ui.horizontal_wrapped(|ui| {
+                            for (label, color, snippet, procedure) in row {
+                                let b = egui::Button::new(
+                                    RichText::new(label)
+                                        .color(*color)
+                                        .family(FontFamily::Monospace),
+                                );
+                                if ui.add(b).on_hover_text(snippet).clicked() {
+                                    self.insert_snippet(&ctx, snippet, *procedure);
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 });
                 ui.add_space(8.0);
                 self.problems_panel(ui, &pal);
