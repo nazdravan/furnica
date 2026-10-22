@@ -76,6 +76,7 @@ pub struct Strings {
     pub stop: &'static str,
     pub reset: &'static str,
     pub check: &'static str,
+    pub format: &'static str,
     pub speed: &'static str,
     pub instant: &'static str,
     pub table: &'static str,
@@ -381,6 +382,7 @@ pub static RO: Strings = Strings {
     stop: "Stop",
     reset: "Resetare",
     check: "Verifică",
+    format: "Formatează",
     speed: "Viteza",
     instant: "Instant",
     table: "Tabela",
@@ -476,7 +478,7 @@ pub static RO: Strings = Strings {
         ),
     ],
     about: "Furnica — executant pentru învățarea algoritmilor. Rescris în Rust după programul original „Furnica” (Ant v2.00, 1999).",
-    shortcuts: "F5 — execută · F6 — pas cu pas · Esc — stop · F7 — verifică · Ctrl+S/O/N — fișiere",
+    shortcuts: "F5 — execută · F6 — pas cu pas · Esc — stop · F7 — verifică · Ctrl+Shift+F — formatează · Ctrl+S/O/N — fișiere",
 };
 
 pub static RU: Strings = Strings {
@@ -520,6 +522,7 @@ pub static RU: Strings = Strings {
     stop: "Стоп",
     reset: "Сброс",
     check: "Проверить",
+    format: "Форматировать",
     speed: "Скорость",
     instant: "Мгновенно",
     table: "Таблица",
@@ -612,7 +615,7 @@ pub static RU: Strings = Strings {
         ),
     ],
     about: "Муравей — исполнитель для изучения алгоритмов. Переписан на Rust по мотивам программы «Furnica» (Ant v2.00, 1999).",
-    shortcuts: "F5 — выполнить · F6 — по шагам · Esc — стоп · F7 — проверить · Ctrl+S/O/N — файлы",
+    shortcuts: "F5 — выполнить · F6 — по шагам · Esc — стоп · F7 — проверить · Ctrl+Shift+F — форматировать · Ctrl+S/O/N — файлы",
 };
 
 pub static EN: Strings = Strings {
@@ -656,6 +659,7 @@ pub static EN: Strings = Strings {
     stop: "Stop",
     reset: "Reset",
     check: "Check",
+    format: "Format",
     speed: "Speed",
     instant: "Instant",
     table: "Table",
@@ -751,5 +755,5 @@ pub static EN: Strings = Strings {
         ),
     ],
     about: "Ant — an executor for learning algorithms. Rewritten in Rust after the original \"Furnica\" (Ant v2.00, 1999).",
-    shortcuts: "F5 — run · F6 — step · Esc — stop · F7 — check · Ctrl+S/O/N — files",
+    shortcuts: "F5 — run · F6 — step · Esc — stop · F7 — check · Ctrl+Shift+F — format · Ctrl+S/O/N — files",
 };

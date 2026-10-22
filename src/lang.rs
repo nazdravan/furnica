@@ -1095,9 +1095,344 @@ pub fn highlight(src: &str) -> Vec<(Range<usize>, TokenClass)> {
     out
 }
 
+// ----------------------------------------------------------- Completare ----
+
+/// Cuvântul este ALTFEL (în oricare limbă).
+pub fn is_else(word: &str) -> bool {
+    keyword(&normalize(word)) == Some(Kw::Else)
+}
+
+/// Numele procedurilor definite în program, așa cum sunt scrise.
+pub fn procedure_names(src: &str) -> Vec<String> {
+    let toks = lex(src, &mut Vec::new());
+    let mut out: Vec<String> = Vec::new();
+    for w in toks.windows(2) {
+        if let (Tok::Word(a), Tok::Word(b)) = (&w[0].tok, &w[1].tok)
+            && keyword(a) == Some(Kw::Procedure)
+            && keyword(b).is_none()
+            && w[0].line == w[1].line
+            && !out.iter().any(|n| normalize(n) == *b)
+        {
+            out.push(w[1].text.clone());
+        }
+    }
+    out
+}
+
+/// După SFÎRȘIT, pe același rând, urmează tipul blocului (sau un tip scris
+/// greșit): SFÎRȘIT închide atunci un bloc, nu programul.
+fn ends_block(toks: &[Token], i: usize) -> bool {
+    toks.get(i + 1).is_some_and(|t| {
+        t.line == toks[i].line
+            && matches!(&t.tok, Tok::Word(w) if keyword(w).is_none_or(|k| end_kind(k).is_some()))
+    })
+}
+
+/// Blocul cel mai interior rămas deschis la sfârșitul textului.
+pub fn open_block(src: &str) -> Option<BlockKind> {
+    let toks = lex(src, &mut Vec::new());
+    let mut stack = Vec::new();
+    let mut i = 0;
+    while i < toks.len() {
+        if let Tok::Word(w) = &toks[i].tok {
+            match keyword(w) {
+                Some(Kw::Begin) => stack.clear(),
+                Some(Kw::Procedure) => {
+                    stack.clear();
+                    stack.push(BlockKind::Procedure);
+                }
+                Some(Kw::Repeat) => stack.push(BlockKind::Repeat),
+                Some(Kw::While) => stack.push(BlockKind::Cycle),
+                Some(Kw::End) if ends_block(&toks, i) => {
+                    stack.pop();
+                    i += 1;
+                }
+                Some(Kw::End) => stack.clear(),
+                _ => {}
+            }
+        }
+        i += 1;
+    }
+    stack.last().copied()
+}
+
+// ------------------------------------------------------------ Formatare ----
+
+#[derive(Clone, Copy)]
+enum Frame {
+    /// REPETĂ, CÎT sau PROCEDURA, până la SFÎRȘIT <tip>.
+    Block,
+    /// Comanda de după DACĂ (`then`) sau ALTFEL; `started` după primul ei cuvânt.
+    Branch { then: bool, started: bool },
+    /// DACĂ și-a terminat comanda; poate urma ALTFEL.
+    AwaitElse,
+}
+
+/// Urmărește blocurile deschise pentru a afla indentarea fiecărui rând.
+#[derive(Default)]
+struct Indenter {
+    stack: Vec<Frame>,
+    /// După DACĂ / CÎT urmează condiția (cu NU în față).
+    expect_cond: bool,
+    /// După condiția lui CÎT poate urma EXECUTĂ.
+    expect_do: bool,
+    /// După SFÎRȘIT urmează tipul blocului.
+    after_end: bool,
+}
+
+impl Indenter {
+    fn depth(&self) -> usize {
+        self.stack
+            .iter()
+            .filter(|f| !matches!(f, Frame::AwaitElse))
+            .count()
+    }
+
+    fn start_command(&mut self) {
+        if let Some(Frame::Branch { started, .. }) = self.stack.last_mut() {
+            *started = true;
+        }
+    }
+
+    /// O comandă s-a terminat: închide ramurile DACĂ / ALTFEL din care făcea parte.
+    fn complete(&mut self) {
+        while let Some(Frame::Branch {
+            then,
+            started: true,
+        }) = self.stack.last().copied()
+        {
+            self.stack.pop();
+            if then {
+                self.stack.push(Frame::AwaitElse);
+                return;
+            }
+        }
+    }
+
+    /// Prelucrează cuvântul `toks[i]`; întoarce indentarea rândului dacă el începe rândul.
+    fn token(&mut self, toks: &[Token], i: usize) -> usize {
+        let tok = &toks[i].tok;
+        let kw = match tok {
+            Tok::Word(w) => keyword(w),
+            Tok::Number(_) => None,
+        };
+        if std::mem::take(&mut self.after_end) {
+            self.complete();
+            return self.depth();
+        }
+        if kw != Some(Kw::Else) && matches!(self.stack.last(), Some(Frame::AwaitElse)) {
+            self.stack.pop();
+            self.complete();
+        }
+        if std::mem::take(&mut self.expect_cond) {
+            match (tok, kw) {
+                (_, Some(Kw::Not)) => {
+                    self.expect_cond = true;
+                    return self.depth();
+                }
+                (Tok::Word(_), Some(Kw::Border | Kw::NotBorder) | None) => return self.depth(),
+                _ => {}
+            }
+        }
+        if std::mem::take(&mut self.expect_do) && kw == Some(Kw::Do) {
+            return self.depth();
+        }
+        let depth = self.depth();
+        match (tok, kw) {
+            (_, Some(Kw::Begin)) => {
+                self.stack.clear();
+                0
+            }
+            (_, Some(Kw::Procedure)) => {
+                self.stack.clear();
+                self.stack.push(Frame::Block);
+                0
+            }
+            (_, Some(Kw::End)) if ends_block(toks, i) => {
+                while let Some(f) = self.stack.pop() {
+                    if matches!(f, Frame::Block) {
+                        break;
+                    }
+                }
+                self.after_end = true;
+                self.depth()
+            }
+            // SFÎRȘIT singur: sfârșitul programului.
+            (_, Some(Kw::End)) => {
+                self.stack.clear();
+                0
+            }
+            (_, Some(Kw::Repeat)) => {
+                self.start_command();
+                self.stack.push(Frame::Block);
+                depth
+            }
+            (_, Some(Kw::While)) => {
+                self.start_command();
+                self.stack.push(Frame::Block);
+                self.expect_cond = true;
+                self.expect_do = true;
+                depth
+            }
+            (_, Some(Kw::If)) => {
+                self.start_command();
+                self.stack.push(Frame::Branch {
+                    then: true,
+                    started: false,
+                });
+                self.expect_cond = true;
+                depth
+            }
+            (_, Some(Kw::Else)) => {
+                if matches!(self.stack.last(), Some(Frame::AwaitElse)) {
+                    self.stack.pop();
+                    self.stack.push(Frame::Branch {
+                        then: false,
+                        started: false,
+                    });
+                }
+                depth
+            }
+            // EXECUTĂ <nume>: numele procedurii încheie comanda.
+            (_, Some(Kw::Do)) => {
+                self.start_command();
+                depth
+            }
+            // Deplasările și apelurile de proceduri.
+            (Tok::Word(_), Some(Kw::Up | Kw::Down | Kw::Left | Kw::Right) | None) => {
+                self.start_command();
+                self.complete();
+                depth
+            }
+            _ => depth,
+        }
+    }
+}
+
+/// Reindentează programul: câte 4 spații pentru fiecare REPETĂ, CÎT, PROCEDURA
+/// deschise și pentru comanda de pe rândul de după DACĂ / ALTFEL; între ÎNCEPUT
+/// și SFÎRȘIT nu se indentează. Restul textului (cuvintele, rândurile goale,
+/// comentariile) rămâne neschimbat.
+pub fn format(src: &str) -> String {
+    let toks = lex(src, &mut Vec::new());
+    let mut ind = Indenter::default();
+    let mut out = String::with_capacity(src.len());
+    let mut i = 0;
+    for (n, line) in src.split('\n').enumerate() {
+        if n > 0 {
+            out.push('\n');
+        }
+        let mut indent = None;
+        while i < toks.len() && toks[i].line == n + 1 {
+            let d = ind.token(&toks, i);
+            indent.get_or_insert(d);
+            i += 1;
+        }
+        let text = line.trim();
+        if !text.is_empty() {
+            let depth = indent.unwrap_or_else(|| ind.depth());
+            out.extend(std::iter::repeat_n("    ", depth));
+            out.push_str(text);
+        }
+    }
+    out
+}
+
+/// Formatarea completă (butonul „Formatează”): pune pe rânduri separate
+/// comanda de după DACĂ … ATUNCI, ALTFEL și comanda de după ALTFEL, apoi
+/// reindentează.
+pub fn format_program(src: &str) -> String {
+    let toks = lex(src, &mut Vec::new());
+    let kw_at = |i: usize| match toks.get(i).map(|t| &t.tok) {
+        Some(Tok::Word(w)) => keyword(w),
+        _ => None,
+    };
+    // Pozițiile (octeți) unde începe un rând nou.
+    let mut breaks = Vec::new();
+    let mut break_before = |i: usize| {
+        if let Some(t) = toks.get(i)
+            && i > 0
+            && toks[i - 1].line == t.line
+        {
+            breaks.push(t.span.start);
+        }
+    };
+    for i in 0..toks.len() {
+        match kw_at(i) {
+            Some(Kw::If) => {
+                let mut j = i + 1;
+                while kw_at(j) == Some(Kw::Not) {
+                    j += 1;
+                }
+                if matches!(toks.get(j).map(|t| &t.tok), Some(Tok::Word(_)))
+                    && matches!(kw_at(j), Some(Kw::Border | Kw::NotBorder) | None)
+                {
+                    j += 1;
+                }
+                if kw_at(j) == Some(Kw::Then) {
+                    j += 1;
+                }
+                break_before(j);
+            }
+            Some(Kw::Else) => {
+                break_before(i);
+                break_before(i + 1);
+            }
+            _ => {}
+        }
+    }
+    let mut out = String::with_capacity(src.len() + breaks.len() * 8);
+    let mut last = 0;
+    for b in breaks {
+        out.push_str(&src[last..b]);
+        out.push('\n');
+        last = b;
+    }
+    out.push_str(&src[last..]);
+    format(&out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn format_nested_blocks() {
+        let src = "// x\nPROCEDURA p\nREPETĂ 2 ORI\nCÎT NU_E_MARGINE EXECUTĂ\nJOS\nSFÎRȘIT CÎT\nSFÎRȘIT REPETĂ\nSFÎRȘIT PROCEDURA\n\nÎNCEPUT\n  p\nREPETĂ 3 ORI\n\tSUS  \nSFÎRȘIT REPETĂ\nSFÎRȘIT\n";
+        assert_eq!(
+            format(src),
+            "// x\nPROCEDURA p\n    REPETĂ 2 ORI\n        CÎT NU_E_MARGINE EXECUTĂ\n            JOS\n        SFÎRȘIT CÎT\n    SFÎRȘIT REPETĂ\nSFÎRȘIT PROCEDURA\n\nÎNCEPUT\np\nREPETĂ 3 ORI\n    SUS\nSFÎRȘIT REPETĂ\nSFÎRȘIT\n"
+        );
+        // REPEAT după END este tipul blocului, nu o comandă nouă.
+        assert_eq!(
+            format(
+                "BEGIN\nREPEAT 2 TIMES\nWHILE NOT_BORDER DO\nDOWN\nEND WHILE\nEND REPEAT\nUP\nEND"
+            ),
+            "BEGIN\nREPEAT 2 TIMES\n    WHILE NOT_BORDER DO\n        DOWN\n    END WHILE\nEND REPEAT\nUP\nEND"
+        );
+    }
+
+    #[test]
+    fn format_program_splits_if_else() {
+        let src = "PROCEDURA p\nSUS\nSFÎRȘIT PROCEDURA\nÎNCEPUT\nDACĂ E_MARGINE ATUNCI SUS ALTFEL JOS\ndaca nu e_margine atunci stinga // gata\nDACĂ E_MARGINE ATUNCI DACĂ NU_E_MARGINE ATUNCI SUS ALTFEL JOS\nREPETĂ 2 ORI\nDACĂ E_MARGINE ATUNCI\nEXECUTĂ p\nALTFEL\nJOS\nSFÎRȘIT REPETĂ\nSFÎRȘIT\n";
+        let out = format_program(src);
+        assert_eq!(
+            out,
+            "PROCEDURA p\n    SUS\nSFÎRȘIT PROCEDURA\nÎNCEPUT\nDACĂ E_MARGINE ATUNCI\n    SUS\nALTFEL\n    JOS\ndaca nu e_margine atunci\n    stinga // gata\nDACĂ E_MARGINE ATUNCI\n    DACĂ NU_E_MARGINE ATUNCI\n        SUS\n    ALTFEL\n        JOS\nREPETĂ 2 ORI\n    DACĂ E_MARGINE ATUNCI\n        EXECUTĂ p\n    ALTFEL\n        JOS\nSFÎRȘIT REPETĂ\nSFÎRȘIT\n"
+        );
+        assert_eq!(compile(src).unwrap().code, compile(&out).unwrap().code);
+    }
+
+    #[test]
+    fn completion_context() {
+        let src = "PROCEDURA Patrat\nSUS\nSFÎRȘIT PROCEDURA\nprocedura Linie\nREPEAT 2\nCIT NU_E_MARGINE EXECUTA\nJOS\nEND WHILE\n";
+        assert_eq!(procedure_names(src), vec!["Patrat", "Linie"]);
+        assert_eq!(open_block(src), Some(BlockKind::Repeat));
+        assert_eq!(open_block("ÎNCEPUT\nREPETĂ 2 ORI\nJOS\nEND REPEAT\n"), None);
+        assert_eq!(open_block("PROCEDURA P\n"), Some(BlockKind::Procedure));
+        assert_eq!(open_block("REPETĂ 2 ORI\nSFÎRȘIT\n"), None);
+        assert!(is_else("altfel") && is_else("ИНАЧЕ") && !is_else("SUS"));
+    }
 
     #[test]
     fn diacritics_and_case() {
@@ -1256,6 +1591,13 @@ mod fuzz {
             assert_eq!(a.program.is_some(), a.errors.is_empty(), "{src}");
             for e in &a.errors {
                 assert!(src.get(e.span.clone()).is_some(), "{src}: {e:?}");
+            }
+            // Formatarea nu schimbă programul și a doua oară nu mai are ce face.
+            let formatted = format_program(&src);
+            assert_eq!(format_program(&formatted), formatted, "{src}");
+            if let Some(p) = &a.program {
+                let after = analyze(&formatted).program;
+                assert_eq!(after.map(|q| q.code), Some(p.code.clone()), "{src}");
             }
             if let Some(p) = a.program {
                 compiled += 1;

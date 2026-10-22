@@ -13,7 +13,7 @@ use egui::{
 
 use crate::ant;
 use crate::antfile;
-use crate::i18n::{Lang, Strings};
+use crate::i18n::{Keywords, Lang, Strings};
 use crate::lang::{self, CompileError, TokenClass};
 use crate::table_edit::{Cursor as TableCursor, Drop, Grab, TypeKey, type_key};
 use crate::vm::{RuntimeError, Tick, Vm};
@@ -257,8 +257,9 @@ pub struct FurnicaApp {
     field_geom: (Pos2, f32),
     pending: Option<Pending>,
     show_help: bool,
-    /// Poziția cursorului în editor (în caractere); `None` până la primul click.
-    cursor: Option<usize>,
+    /// Selecția din editor (în caractere; goală = doar cursorul);
+    /// `None` până la primul click.
+    cursor: Option<Range<usize>>,
     allow_close: bool,
     title: String,
     analysis: lang::Analysis,
@@ -266,9 +267,72 @@ pub struct FurnicaApp {
     analyzed: Option<String>,
     /// Porțiunea de text la care trebuie dus cursorul (click în lista de probleme).
     jump_to: Option<Range<usize>>,
-    /// Selecția pusă în editor după ce e desenat, odată cu focusul (click-ul
-    /// pe un buton i-ar lua focusul în același cadru).
-    focus_editor: Option<Range<usize>>,
+    /// Editorul primește selecția `cursor` și focusul după ce e desenat
+    /// (click-ul pe un buton i-ar lua focusul în același cadru).
+    focus_editor: bool,
+    /// Variantele propuse în timp ce elevul scrie.
+    completion: Option<Completion>,
+}
+
+/// O comandă de inserat: textul dinaintea exemplului, exemplul (rămâne
+/// selectat, ca următoarea comandă să-l înlocuiască) și textul de după.
+#[derive(Clone, Default)]
+struct Snippet {
+    before: String,
+    demo: String,
+    after: String,
+}
+
+impl Snippet {
+    fn word(word: &str) -> Snippet {
+        Snippet {
+            before: word.into(),
+            ..Snippet::default()
+        }
+    }
+
+    /// Un bloc cu `demo` ca exemplu în interior.
+    fn block(head: &str, demo: &str, end: &str) -> Snippet {
+        Snippet {
+            before: format!("{head}\n    "),
+            demo: demo.into(),
+            after: format!("\n{end}"),
+        }
+    }
+
+    /// DACĂ pe mai multe rânduri; comanda de după ATUNCI e selectată.
+    fn if_else(kw: &Keywords, cond: &str) -> Snippet {
+        Snippet {
+            before: format!("{} {cond} {}\n    ", kw.if_, kw.then),
+            demo: kw.up.into(),
+            after: format!("\n{}\n    {}", kw.else_, kw.down),
+        }
+    }
+
+    fn text(&self) -> String {
+        [&self.before, &self.demo, &self.after]
+            .map(String::as_str)
+            .concat()
+    }
+
+    /// Primul rând, cu „…” dacă blocul continuă.
+    fn label(&self) -> String {
+        let text = self.text();
+        match text.split_once('\n') {
+            Some((first, _)) => format!("{first} …"),
+            None => text,
+        }
+    }
+}
+
+/// Lista de variante deschisă sub cursor.
+struct Completion {
+    /// Comanda scrisă pe rând (în caractere), înlocuită de varianta aleasă.
+    range: Range<usize>,
+    items: Vec<Snippet>,
+    selected: usize,
+    /// Unde a fost desenată lista (pentru click-urile cu mausul).
+    rect: Option<Rect>,
 }
 
 /// O problemă de afișat în editor și în lista de probleme.
@@ -316,7 +380,8 @@ impl FurnicaApp {
             analysis: lang::Analysis::default(),
             analyzed: None,
             jump_to: None,
-            focus_editor: None,
+            focus_editor: false,
+            completion: None,
         };
         app.apply_theme(&cc.egui_ctx);
         if let Some(p) = open {
@@ -645,7 +710,8 @@ impl FurnicaApp {
                     code: format!("{}\n\n{}\n", kw.begin, kw.end),
                 });
                 self.s.path = None;
-                self.cursor = Some(kw.begin.chars().count() + 1);
+                let at = kw.begin.chars().count() + 1;
+                self.cursor = Some(at..at);
             }
             Pending::Open => {
                 if let Some(path) = rfd::FileDialog::new()
@@ -666,12 +732,49 @@ impl FurnicaApp {
         }
     }
 
-    /// Inserează o comandă: la cursor sau, fără cursor, înainte de SFÎRȘIT.
-    /// Procedurile se inserează înainte de ÎNCEPUT.
-    fn insert_snippet(&mut self, snippet: &str, procedure: bool) {
-        let code = &mut self.s.code;
-        let chars = code.chars().count();
-        let line_start = |pred: fn(&str) -> bool, last: bool| {
+    /// Formatează programul; cursorul rămâne lângă același cuvânt, iar
+    /// schimbarea se anulează cu un singur Ctrl+Z.
+    fn format_code(&mut self, ctx: &egui::Context) {
+        let new = lang::format_program(&self.s.code);
+        if new != self.s.code {
+            let sel = self.cursor.clone().unwrap_or_default();
+            let map = |at| respaced_cursor(&self.s.code, &new, at);
+            let cursor = map(sel.start)..map(sel.end);
+            let id = egui::Id::unique(EDITOR_ID);
+            let mut state = egui::text_edit::TextEditState::load(ctx, id).unwrap_or_default();
+            // Două puncte de anulare: textul vechi și cel formatat.
+            let mut undoer = state.undoer();
+            let old_range = state.cursor.char_range().unwrap_or_default();
+            undoer.add_undo(&(old_range, self.s.code.clone()));
+            let range = CCursorRange::two(CCursor::new(cursor.start), CCursor::new(cursor.end));
+            undoer.add_undo(&(range, new.clone()));
+            state.set_undoer(undoer);
+            state.cursor.set_char_range(Some(range));
+            state.store(ctx, id);
+            self.s.code = new;
+            self.s.dirty = true;
+            self.cursor = Some(cursor);
+        }
+        self.focus_editor = true;
+    }
+
+    /// Scrie comanda `before` + `demo` + `after` în program. Selecția e
+    /// înlocuită de comandă; fără selecție, comanda ocupă rândul gol al
+    /// cursorului sau un rând nou, deasupra ori dedesubtul lui (fără cursor:
+    /// înainte de SFÎRȘIT). Procedurile de la butoane se pun înainte de ÎNCEPUT.
+    /// Rândurile noi primesc indentarea blocului în care ajung, iar exemplul din
+    /// interiorul comenzii (`demo`) rămâne selectat, ca următoarea comandă să-l
+    /// înlocuiască. După o comandă fără exemplu, cursorul trece pe un rând nou.
+    fn insert_snippet(&mut self, snippet: &Snippet, procedure: bool) {
+        let Snippet {
+            before,
+            demo,
+            after,
+        } = snippet;
+        let (before, demo, after) = (before.as_str(), demo.as_str(), after.as_str());
+        let code = &self.s.code;
+        let byte = |c: usize| code.char_indices().nth(c).map_or(code.len(), |(b, _)| b);
+        let line_with = |pred: fn(&str) -> bool, last: bool| {
             let mut found = None;
             let mut at = 0;
             for l in code.split_inclusive('\n') {
@@ -685,42 +788,232 @@ impl FurnicaApp {
             }
             found
         };
-        let main_end = line_start(lang::is_main_end_line, true).unwrap_or(code.len());
-        let begin = line_start(lang::is_begin_line, false);
-        let byte = match (procedure, begin) {
-            (true, Some(b)) => b,
-            _ => {
-                let default = code[..main_end].chars().count();
-                let at = self.cursor.unwrap_or(default).min(chars);
-                code.char_indices().nth(at).map_or(code.len(), |(b, _)| b)
-            }
+        let begin = line_with(lang::is_begin_line, false).filter(|_| procedure);
+        // Fără cursor, comanda se adaugă înainte de SFÎRȘIT-ul programului.
+        let default = line_with(lang::is_main_end_line, true).unwrap_or(code.len());
+        let sel = match &self.cursor {
+            Some(r) => byte(r.start)..byte(r.end),
+            None => default..default,
         };
-        let mut text = String::new();
-        if byte > 0 && !code[..byte].ends_with('\n') {
-            text.push('\n');
+        let line_start = code[..sel.start].rfind('\n').map_or(0, |i| i + 1);
+        let line_end = code[sel.start..]
+            .find('\n')
+            .map_or(code.len(), |i| sel.start + i);
+        let (range, prefix, suffix) = if let Some(b) = begin {
+            // Procedura, cu un rând gol înainte de ÎNCEPUT.
+            (b..b, "", "\n\n")
+        } else if !sel.is_empty() {
+            (sel, "", "")
+        } else if code[line_start..line_end].trim().is_empty() {
+            (line_start..line_end, "", "")
+        } else if code[line_start..sel.start].trim().is_empty() {
+            (line_start..line_start, "", "\n")
+        } else {
+            (line_end..line_end, "\n", "")
+        };
+        let rest = &code[range.end..];
+        let mut lines = rest.split('\n');
+        let line_rest_blank = suffix.is_empty() && lines.next().unwrap_or("").trim().is_empty();
+        // Comanda a înlocuit-o pe cea de după ATUNCI: urmează ALTFEL și comanda
+        // lui, care e selectată în loc să se facă un rând nou.
+        let else_follows = demo.is_empty()
+            && line_rest_blank
+            && lines.next().is_some_and(|l| lang::is_else(l.trim()))
+            && lines.next().is_some_and(|l| {
+                let l = l.trim();
+                !l.is_empty() && !l.contains(char::is_whitespace)
+            });
+        // Rândul nou primește un cuvânt provizoriu, ca formatarea să-i dea
+        // indentarea; cuvântul e scos apoi.
+        let new_line = demo.is_empty() && line_rest_blank && !else_follows;
+        let placeholder = if new_line { "\n_" } else { "" };
+
+        let new = [
+            &code[..range.start],
+            prefix,
+            before,
+            demo,
+            after,
+            placeholder,
+            suffix,
+            rest,
+        ]
+        .concat();
+        // Indentarea rândurilor atinse vine din formatare; restul rămâne.
+        let first = code[..range.start].matches('\n').count() + prefix.len();
+        let last = first
+            + [before, demo, after, placeholder]
+                .concat()
+                .matches('\n')
+                .count();
+        let code = reindent_lines(&new, first..=last);
+
+        let start = new[..range.start].chars().count() + prefix.len() + before.chars().count();
+        let end = start + demo.chars().count();
+        let (a, b) = if demo.is_empty() {
+            let at = end + after.chars().count() + placeholder.len().saturating_sub(1);
+            (at, at)
+        } else {
+            (start, end)
+        };
+        let mut cursor = reindented_cursor(&new, &code, a)..reindented_cursor(&new, &code, b);
+        if else_follows {
+            let at = code
+                .char_indices()
+                .nth(cursor.end)
+                .map_or(code.len(), |(b, _)| b);
+            let line = code[at..].split('\n').nth(2).unwrap_or("");
+            let line_start: usize = code[at..]
+                .split('\n')
+                .take(2)
+                .map(|l| l.chars().count() + 1)
+                .sum::<usize>()
+                + cursor.end;
+            let indent = line.chars().take_while(|c| c.is_whitespace()).count();
+            let start = line_start + indent;
+            cursor = start..start + line.trim().chars().count();
         }
-        // Păstrează indentarea rândului curent.
-        let line_start = code[..byte].rfind('\n').map_or(0, |i| i + 1);
-        let indent: String = code[line_start..]
-            .chars()
-            .take_while(|c| *c == ' ' || *c == '\t')
-            .collect();
-        let at_line_start = text.is_empty() && line_start == byte;
-        for (i, l) in snippet.lines().enumerate() {
-            if i > 0 || !at_line_start {
-                text.push_str(&indent);
-            }
-            text.push_str(l);
-            text.push('\n');
+        let mut code = code;
+        if new_line {
+            let at = code
+                .char_indices()
+                .nth(cursor.start)
+                .map_or(code.len(), |(b, _)| b);
+            code.remove(at);
         }
-        if procedure {
-            text.push('\n');
-        }
-        code.insert_str(byte, &text);
+        self.s.code = code;
         self.s.dirty = true;
-        let cursor = code[..byte].chars().count() + text.chars().count();
         self.cursor = Some(cursor);
-        self.focus_editor = Some(cursor..cursor);
+        self.focus_editor = true;
+    }
+
+    /// Enter: textul de după cursor trece pe un rând nou, cu indentarea
+    /// blocului; rândul părăsit e reindentat și el (SFÎRȘIT, ALTFEL se
+    /// aliniază cu începutul blocului). Întoarce noua poziție a cursorului.
+    fn new_line(&mut self, sel: Range<usize>) -> usize {
+        let code = &self.s.code;
+        let byte = |c: usize| code.char_indices().nth(c).map_or(code.len(), |(b, _)| b);
+        let (a, b) = (byte(sel.start), byte(sel.end));
+        let rest = code[b..].trim_start_matches([' ', '\t']);
+        // Pe un rând gol, cuvântul provizoriu îi dă indentarea la formatare.
+        let placeholder = if rest.split('\n').next().unwrap_or("").trim().is_empty() {
+            "_"
+        } else {
+            ""
+        };
+        let new = [&code[..a], "\n", placeholder, rest].concat();
+        let line = code[..a].matches('\n').count();
+        let mut out = reindent_lines(&new, line..=line + 1);
+        let at = reindented_cursor(&new, &out, code[..a].chars().count() + 1);
+        if !placeholder.is_empty() {
+            let b = out.char_indices().nth(at).map_or(out.len(), |(b, _)| b);
+            out.remove(b);
+        }
+        self.s.code = out;
+        self.cursor = Some(at..at);
+        at
+    }
+
+    /// Variantele care continuă comanda `typed` scrisă la începutul rândului;
+    /// `before` e textul programului de dinaintea ei.
+    fn suggestions(&self, typed: &str, before: &str) -> Vec<Snippet> {
+        let key = |s: &str| {
+            lang::normalize(s)
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
+        };
+        let typed_key = key(typed);
+        if !typed_key.chars().any(char::is_alphanumeric) {
+            return Vec::new();
+        }
+        let kw = &self.t().kw;
+        let n = typed
+            .split_whitespace()
+            .nth(1)
+            .filter(|a| a.chars().all(|c| c.is_ascii_digit()))
+            .unwrap_or("4");
+        let mut all: Vec<Snippet> = [kw.up, kw.down, kw.left, kw.right]
+            .map(Snippet::word)
+            .into();
+        all.push(Snippet::block(
+            &format!("{} {n} {}", kw.repeat, kw.times),
+            kw.down,
+            kw.end_repeat,
+        ));
+        for c in [kw.not_border, kw.border] {
+            all.push(Snippet::block(
+                &format!("{} {c} {}", kw.while_, kw.do_),
+                kw.down,
+                kw.end_while,
+            ));
+        }
+        for c in [kw.border, kw.not_border] {
+            all.push(Snippet::if_else(kw, c));
+        }
+        all.push(Snippet::word(kw.else_));
+        all.push(Snippet::block(
+            &format!("{} {}", kw.procedure, kw.name),
+            kw.down,
+            kw.end_procedure,
+        ));
+        // Procedurile se cheamă cu numele lor.
+        all.extend(
+            lang::procedure_names(&self.s.code)
+                .iter()
+                .map(|p| Snippet::word(p)),
+        );
+        // Sfârșitul blocului deschis e propus primul.
+        let mut ends = [
+            (lang::BlockKind::Repeat, kw.end_repeat),
+            (lang::BlockKind::Cycle, kw.end_while),
+            (lang::BlockKind::Procedure, kw.end_procedure),
+        ];
+        let open = lang::open_block(before);
+        ends.sort_by_key(|(kind, _)| Some(*kind) != open);
+        all.extend(ends.map(|(_, end)| Snippet::word(end)));
+        all.push(Snippet::word(kw.begin));
+        all.push(Snippet::word(kw.end));
+
+        // Rămân variantele care adaugă ceva în afara exemplului: după
+        // „DACĂ E_MARGINE ATUNCI” Enter face rând nou.
+        all.retain(|s| {
+            let first = key(s.text().split('\n').next().unwrap_or(""));
+            first.starts_with(&typed_key) && first != typed_key && key(&s.before) != typed_key
+        });
+        all
+    }
+
+    /// Deschide lista de variante pentru comanda scrisă înaintea cursorului.
+    fn update_completion(&mut self) {
+        self.completion = None;
+        let Some(cursor) = self.cursor.clone().filter(|r| r.is_empty()) else {
+            return;
+        };
+        let code = &self.s.code;
+        let end = code
+            .char_indices()
+            .nth(cursor.end)
+            .map_or(code.len(), |(b, _)| b);
+        let line_start = code[..end].rfind('\n').map_or(0, |i| i + 1);
+        let typed = code[line_start..end].trim_start();
+        let start = end - typed.len();
+        let items = self.suggestions(typed, &code[..start]);
+        if !items.is_empty() {
+            self.completion = Some(Completion {
+                range: code[..start].chars().count()..cursor.end,
+                items,
+                selected: 0,
+                rect: None,
+            });
+        }
+    }
+
+    fn accept_completion(&mut self, i: usize) {
+        if let Some(c) = self.completion.take() {
+            self.cursor = Some(c.range);
+            self.insert_snippet(&c.items[i], false);
+        }
     }
 
     // ------------------------------------------------------------- UI ---
@@ -762,6 +1055,10 @@ impl FurnicaApp {
         }
         if shortcut(Key::N) {
             self.request(Pending::New, ctx);
+        }
+        let format = KeyboardShortcut::new(Modifiers::COMMAND | Modifiers::SHIFT, Key::F);
+        if ctx.input_mut(|i| i.consume_shortcut(&format)) && self.mode == Mode::Idle {
+            self.format_code(ctx);
         }
 
         let dropped: Vec<PathBuf> = ctx.input(|i| {
@@ -990,7 +1287,7 @@ impl FurnicaApp {
                     .inner_margin(Margin::same(12)),
             )
             .show(ui, |ui| {
-                let title = ui
+                let (title, format) = ui
                     .horizontal(|ui| {
                         let title = ui.label(RichText::new(t.program).size(16.0).family(bold()));
                         ui.label(
@@ -1001,50 +1298,63 @@ impl FurnicaApp {
                             ))
                             .color(pal.muted),
                         );
-                        title.id
+                        let format = ui
+                            .with_layout(Layout::right_to_left(Align::Center), |ui| {
+                                ui.add_enabled(
+                                    editable,
+                                    egui::Button::new(format!("⇥  {}", t.format)),
+                                )
+                                .on_hover_text("Ctrl+Shift+F")
+                                .clicked()
+                            })
+                            .inner;
+                        (title.id, format)
                     })
                     .inner;
+                if format {
+                    self.format_code(ui.ctx());
+                }
                 ui.add_space(6.0);
 
-                // Butoane pentru inserarea comenzilor: (etichetă, culoare, text, e procedură).
-                let snippets: [(String, Color32, String, bool); 8] = [
-                    (kw.up.into(), pal.action, kw.up.into(), false),
-                    (kw.down.into(), pal.action, kw.down.into(), false),
-                    (kw.left.into(), pal.action, kw.left.into(), false),
-                    (kw.right.into(), pal.action, kw.right.into(), false),
+                // Butoane pentru inserarea comenzilor: (etichetă, culoare, comandă, e procedură).
+                let snippets: [(String, Color32, Snippet, bool); 8] = [
+                    (kw.up.into(), pal.action, Snippet::word(kw.up), false),
+                    (kw.down.into(), pal.action, Snippet::word(kw.down), false),
+                    (kw.left.into(), pal.action, Snippet::word(kw.left), false),
+                    (kw.right.into(), pal.action, Snippet::word(kw.right), false),
                     (
                         format!("{} N", kw.repeat),
                         pal.control,
-                        format!(
-                            "{} 4 {}\n    {}\n{}",
-                            kw.repeat, kw.times, kw.down, kw.end_repeat
+                        Snippet::block(
+                            &format!("{} 4 {}", kw.repeat, kw.times),
+                            kw.down,
+                            kw.end_repeat,
                         ),
                         false,
                     ),
                     (
                         kw.while_.into(),
                         pal.control,
-                        format!(
-                            "{} {} {}\n    {}\n{}",
-                            kw.while_, kw.not_border, kw.do_, kw.down, kw.end_while
+                        Snippet::block(
+                            &format!("{} {} {}", kw.while_, kw.not_border, kw.do_),
+                            kw.down,
+                            kw.end_while,
                         ),
                         false,
                     ),
                     (
                         kw.if_.into(),
                         pal.control,
-                        format!(
-                            "{} {} {} {} {} {}",
-                            kw.if_, kw.border, kw.then, kw.up, kw.else_, kw.down
-                        ),
+                        Snippet::if_else(kw, kw.border),
                         false,
                     ),
                     (
                         kw.procedure.into(),
                         pal.control,
-                        format!(
-                            "{} {}\n    {}\n{}",
-                            kw.procedure, kw.name, kw.down, kw.end_procedure
+                        Snippet::block(
+                            &format!("{} {}", kw.procedure, kw.name),
+                            kw.down,
+                            kw.end_procedure,
                         ),
                         true,
                     ),
@@ -1060,7 +1370,7 @@ impl FurnicaApp {
                                         .color(*color)
                                         .family(FontFamily::Monospace),
                                 );
-                                if ui.add(b).on_hover_text(snippet).clicked() {
+                                if ui.add(b).on_hover_text(snippet.text()).clicked() {
                                     self.insert_snippet(snippet, *procedure);
                                 }
                             }
@@ -1170,6 +1480,62 @@ impl FurnicaApp {
         }
     }
 
+    /// Pune selecția `self.cursor` în starea editorului.
+    fn store_cursor(&self, ctx: &egui::Context) {
+        if let Some(sel) = &self.cursor {
+            let id = egui::Id::unique(EDITOR_ID);
+            let mut state = egui::text_edit::TextEditState::load(ctx, id).unwrap_or_default();
+            state.cursor.set_char_range(Some(CCursorRange::two(
+                CCursor::new(sel.start),
+                CCursor::new(sel.end),
+            )));
+            state.store(ctx, id);
+        }
+    }
+
+    /// Lista de variante sub comanda scrisă: se deschide când elevul scrie și
+    /// se închide când cursorul pleacă sau editorul pierde focusul.
+    fn completion_list(&mut self, ui: &Ui, out: &egui::text_edit::TextEditOutput, edited: bool) {
+        if out.response.changed() && !edited {
+            self.update_completion();
+        }
+        let Some(c) = &mut self.completion else {
+            return;
+        };
+        let on_list = c
+            .rect
+            .zip(ui.input(|i| i.pointer.hover_pos()))
+            .is_some_and(|(r, p)| r.contains(p));
+        let focused = out.response.response.has_focus() || self.focus_editor;
+        if self.cursor != Some(c.range.end..c.range.end) || (!focused && !on_list) {
+            self.completion = None;
+            return;
+        }
+
+        let at = out.galley.pos_from_cursor(CCursor::new(c.range.start));
+        let pos = out.galley_pos + at.left_bottom().to_vec2() + vec2(0.0, 2.0);
+        let mut clicked = None;
+        let area = egui::Area::new(out.response.response.id.with("completion"))
+            .order(egui::Order::Foreground)
+            .fixed_pos(pos)
+            .show(ui.ctx(), |ui| {
+                egui::Frame::popup(ui.style()).show(ui, |ui| {
+                    // Fiecare variantă pe un singur rând, oricât de îngust e panoul.
+                    ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                    for (i, s) in c.items.iter().enumerate() {
+                        let text = RichText::new(s.label()).family(FontFamily::Monospace);
+                        if ui.selectable_label(i == c.selected, text).clicked() {
+                            clicked = Some(i);
+                        }
+                    }
+                });
+            });
+        c.rect = Some(area.response.rect);
+        if let Some(i) = clicked {
+            self.accept_completion(i);
+        }
+    }
+
     fn code_editor(&mut self, ui: &mut Ui, pal: &Pal, editable: bool, label: egui::Id) {
         let mono = FontId::monospace(15.0);
         let gutter = 44.0;
@@ -1197,8 +1563,63 @@ impl FurnicaApp {
         if let Some(span) = self.jump_to.take() {
             let a = char_index(&self.s.code, span.start);
             let b = char_index(&self.s.code, span.end);
-            self.focus_editor = Some(a..b);
+            self.cursor = Some(a..b);
+            self.focus_editor = true;
             scroll_to = Some(a);
+        }
+
+        let mut edited = false;
+        // Tastele listei de variante: ↑/↓ aleg, Enter/Tab inserează, Esc închide.
+        let focused = ui.memory(|m| m.has_focus(id));
+        if !editable {
+            self.completion = None;
+        }
+        // La Esc egui scoate deja focusul din editor, la începutul cadrului.
+        let esc = ui.input(|i| i.key_pressed(Key::Escape));
+        if (focused || esc)
+            && let Some(c) = &mut self.completion
+        {
+            let n = c.items.len();
+            let (up, down, accept, close) = ui.input_mut(|i| {
+                (
+                    i.consume_key(Modifiers::NONE, Key::ArrowUp),
+                    i.consume_key(Modifiers::NONE, Key::ArrowDown),
+                    i.consume_key(Modifiers::NONE, Key::Enter)
+                        || i.consume_key(Modifiers::NONE, Key::Tab),
+                    i.consume_key(Modifiers::NONE, Key::Escape),
+                )
+            });
+            if up {
+                c.selected = (c.selected + n - 1) % n;
+            }
+            if down {
+                c.selected = (c.selected + 1) % n;
+            }
+            let selected = c.selected;
+            if close {
+                self.completion = None;
+                self.focus_editor = true;
+            } else if accept {
+                self.accept_completion(selected);
+                self.store_cursor(ui.ctx());
+                edited = true;
+            }
+        }
+
+        // Enter e tratat aici, ca rândul nou să primească indentarea blocului.
+        if editable
+            && ui.memory(|m| m.has_focus(id))
+            && let Some(mut state) = egui::text_edit::TextEditState::load(ui.ctx(), id)
+            && let Some(range) = state.cursor.char_range()
+            && ui.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Enter))
+        {
+            let r = range.as_sorted_char_range();
+            let at = self.new_line(r.start.into()..r.end.into());
+            state
+                .cursor
+                .set_char_range(Some(CCursorRange::one(CCursor::new(at))));
+            state.store(ui.ctx(), id);
+            edited = true;
         }
 
         let bg = ui.painter().add(Shape::Noop);
@@ -1220,7 +1641,7 @@ impl FurnicaApp {
             .show(ui);
         let _ = out.response.response.clone().labelled_by(label);
 
-        if out.response.changed() {
+        if out.response.changed() || edited {
             self.s.dirty = true;
             if !matches!(self.status, Status::Ready) {
                 self.status = Status::Ready;
@@ -1228,19 +1649,15 @@ impl FurnicaApp {
             }
         }
         if let Some(r) = out.cursor_range {
-            self.cursor = Some(r.primary.index.into());
+            let r = r.as_sorted_char_range();
+            self.cursor = Some(r.start.into()..r.end.into());
         }
-        // Fără focus, egui strânge selecția la cursor: selecția și focusul se
-        // pun după ce editorul e desenat.
-        if let Some(sel) = self.focus_editor.take() {
-            let mut state = egui::text_edit::TextEditState::load(ui.ctx(), id).unwrap_or_default();
-            state.cursor.set_char_range(Some(CCursorRange::two(
-                CCursor::new(sel.start),
-                CCursor::new(sel.end),
-            )));
-            state.store(ui.ctx(), id);
+        if std::mem::take(&mut self.focus_editor) {
+            // Fără focus, egui strânge selecția la cursor: o pune la loc.
+            self.store_cursor(ui.ctx());
             out.response.response.request_focus();
         }
+        self.completion_list(ui, &out, edited);
 
         let diags = if self.analyzed.as_ref() == Some(&self.s.code) {
             self.diagnostics()
@@ -2039,6 +2456,53 @@ fn char_index(s: &str, byte: usize) -> usize {
     s[..b].chars().count()
 }
 
+/// Poziția cursorului (în caractere) după o formatare care schimbă doar
+/// spațiile și rândurile: rămâne lângă același caracter vizibil.
+fn respaced_cursor(old: &str, new: &str, at: usize) -> usize {
+    let visible = old.chars().take(at).filter(|c| !c.is_whitespace()).count();
+    // Lipit de textul din stânga rămâne după el; altfel trece la textul următor.
+    let after_text = at > 0 && old.chars().nth(at - 1).is_some_and(|c| !c.is_whitespace());
+    let mut seen = 0;
+    for (i, c) in new.chars().enumerate() {
+        if seen == visible && (after_text || !c.is_whitespace()) {
+            return i;
+        }
+        if !c.is_whitespace() {
+            seen += 1;
+        }
+    }
+    new.chars().count()
+}
+
+/// Pune pe rândurile `lines` indentarea dată de formatare; restul rămâne.
+fn reindent_lines(code: &str, lines: std::ops::RangeInclusive<usize>) -> String {
+    let formatted = lang::format(code);
+    let out: Vec<&str> = code
+        .split('\n')
+        .zip(formatted.split('\n'))
+        .enumerate()
+        .map(|(i, (old, f))| if lines.contains(&i) { f } else { old })
+        .collect();
+    out.join("\n")
+}
+
+/// Poziția cursorului (în caractere) după reindentare: rămâne pe același
+/// caracter din rând; din spațiile de la început trece la primul cuvânt.
+fn reindented_cursor(old: &str, new: &str, at: usize) -> usize {
+    let indent = |l: &str| l.chars().take_while(|c| c.is_whitespace()).count();
+    let (mut old_start, mut new_start) = (0, 0);
+    for (o, n) in old.split('\n').zip(new.split('\n')) {
+        let (old_len, new_len) = (o.chars().count(), n.chars().count());
+        if at <= old_start + old_len {
+            let col = (at - old_start).saturating_sub(indent(o)) + indent(n);
+            return new_start + col.min(new_len);
+        }
+        old_start += old_len + 1;
+        new_start += new_len + 1;
+    }
+    new.chars().count()
+}
+
 fn wavy_underline(painter: &egui::Painter, x0: f32, x1: f32, y: f32, color: Color32) {
     let mut points = Vec::new();
     let mut x = x0;
@@ -2253,6 +2717,21 @@ mod tests {
             // Cursorul rămâne în editor după click pe buton.
             let editor = egui::Id::unique(EDITOR_ID);
             assert!(h.ctx.memory(|m| m.has_focus(editor)));
+            // Exemplul din interior e selectat și e înlocuit de următoarea
+            // comandă; după DACĂ se completează comanda de după ATUNCI, apoi
+            // cea de după ALTFEL.
+            for b in ["SUS", "DACĂ", "STÎNGA", "DREAPTA"] {
+                h.get_by_label(b).click();
+                h.run_steps(2);
+            }
+            assert_eq!(
+                h.state().s.code,
+                "ÎNCEPUT\nSUS\nSTÎNGA\nREPETĂ 4 ORI\n    SUS\n    DACĂ E_MARGINE ATUNCI\n        STÎNGA\n    ALTFEL\n        DREAPTA\n    \nSFÎRȘIT REPETĂ\nSFÎRȘIT\n"
+            );
+            // După comandă, cursorul e pe un rând nou, cu indentarea blocului.
+            let at = h.state().s.code.find("    \nSFÎRȘIT REPETĂ").unwrap() + 4;
+            let at = h.state().s.code[..at].chars().count();
+            assert_eq!(h.state().cursor, Some(at..at));
             // Procedurile ajung înainte de ÎNCEPUT.
             h.get_by_label("PROCEDURA").click();
             h.run_steps(2);
@@ -2266,6 +2745,162 @@ mod tests {
             );
             assert!(h.state().s.dirty);
             assert!(lang::analyze(&h.state().s.code).errors.is_empty());
+        }
+
+        /// Pune cursorul la `at` (în caractere) și focusul în editor.
+        fn focus_at(h: &mut Harness<'_, FurnicaApp>, at: usize) {
+            h.state_mut().cursor = Some(at..at);
+            h.state_mut().focus_editor = true;
+            h.run_steps(2);
+        }
+
+        fn completion_labels(h: &Harness<'_, FurnicaApp>) -> Vec<String> {
+            h.state()
+                .completion
+                .as_ref()
+                .map(|c| c.items.iter().map(Snippet::label).collect())
+                .unwrap_or_default()
+        }
+
+        #[test]
+        fn enter_keeps_block_indentation() {
+            let mut h = harness();
+            let src = "ÎNCEPUT\nREPETĂ 2 ORI\nSFÎRȘIT\n";
+            h.state_mut().s.code = src.into();
+            focus_at(&mut h, "ÎNCEPUT\nREPETĂ 2 ORI".chars().count());
+            let typed = |h: &mut Harness<'_, FurnicaApp>, text: &str| {
+                h.event(egui::Event::Text(text.into()));
+                h.run_steps(1);
+                h.key_press(Key::Enter);
+                h.run_steps(1);
+            };
+            typed(&mut h, "");
+            typed(&mut h, "JOS");
+            assert_eq!(
+                h.state().s.code,
+                "ÎNCEPUT\nREPETĂ 2 ORI\n    JOS\n    \nSFÎRȘIT\n"
+            );
+            // SFÎRȘIT REPETĂ se aliniază cu REPETĂ după Enter.
+            typed(&mut h, "SFÎRȘIT REPETĂ");
+            assert_eq!(
+                h.state().s.code,
+                "ÎNCEPUT\nREPETĂ 2 ORI\n    JOS\nSFÎRȘIT REPETĂ\n\nSFÎRȘIT\n"
+            );
+        }
+
+        #[test]
+        fn completion_while_typing() {
+            let mut h = harness();
+            h.ctx.set_theme(ThemePreference::Light);
+            h.state_mut().s.code = "ÎNCEPUT\n\nSFÎRȘIT\n".into();
+            focus_at(&mut h, "ÎNCEPUT\n".chars().count());
+
+            h.event(egui::Event::Text("cit".into()));
+            h.run_steps(2);
+            assert_eq!(
+                completion_labels(&h),
+                ["CÎT NU_E_MARGINE EXECUTĂ …", "CÎT E_MARGINE EXECUTĂ …"]
+            );
+            shot(&mut h, "10-completion");
+            h.key_press(Key::ArrowDown);
+            h.run_steps(1);
+            h.key_press(Key::Enter);
+            h.run_steps(2);
+            assert_eq!(
+                h.state().s.code,
+                "ÎNCEPUT\nCÎT E_MARGINE EXECUTĂ\n    JOS\nSFÎRȘIT CÎT\nSFÎRȘIT\n"
+            );
+            assert!(h.state().completion.is_none());
+
+            // „s” înlocuiește JOS selectat; sfârșitul ciclului e propus
+            // înaintea celorlalte.
+            h.event(egui::Event::Text("s".into()));
+            h.run_steps(2);
+            assert_eq!(
+                completion_labels(&h),
+                [
+                    "SUS",
+                    "STÎNGA",
+                    "SFÎRȘIT CÎT",
+                    "SFÎRȘIT REPETĂ",
+                    "SFÎRȘIT PROCEDURA",
+                    "SFÎRȘIT"
+                ]
+            );
+            h.key_press(Key::Tab);
+            h.run_steps(2);
+            assert_eq!(
+                h.state().s.code,
+                "ÎNCEPUT\nCÎT E_MARGINE EXECUTĂ\n    SUS\n    \nSFÎRȘIT CÎT\nSFÎRȘIT\n"
+            );
+
+            // Esc închide lista, iar cursorul rămâne în editor.
+            h.event(egui::Event::Text("JO".into()));
+            h.run_steps(2);
+            assert_eq!(completion_labels(&h), ["JOS"]);
+            h.key_press(Key::Escape);
+            h.run_steps(1);
+            assert!(h.state().completion.is_none());
+            h.key_press(Key::Enter);
+            h.run_steps(1);
+
+            // După o condiție scrisă întreagă, Enter face rând nou.
+            h.event(egui::Event::Text("DACĂ E_MARGINE ATUNCI".into()));
+            h.run_steps(2);
+            assert!(h.state().completion.is_none());
+            h.key_press(Key::Enter);
+            h.run_steps(1);
+            assert_eq!(
+                h.state().s.code,
+                "ÎNCEPUT\nCÎT E_MARGINE EXECUTĂ\n    SUS\n    JO\n    DACĂ E_MARGINE ATUNCI\n        \nSFÎRȘIT CÎT\nSFÎRȘIT\n"
+            );
+        }
+
+        #[test]
+        fn completion_click_calls_procedure() {
+            let mut h = harness();
+            let src = "PROCEDURA pina_jos\n    JOS\nSFÎRȘIT PROCEDURA\n\nÎNCEPUT\n\nSFÎRȘIT\n";
+            h.state_mut().s.code = src.into();
+            focus_at(&mut h, src.chars().count() - "\nSFÎRȘIT\n".chars().count());
+            h.event(egui::Event::Text("pin".into()));
+            h.run_steps(2);
+            h.get_by_label("pina_jos").click();
+            h.run_steps(3);
+            assert!(h.state().s.code.ends_with("ÎNCEPUT\npina_jos\n\nSFÎRȘIT\n"));
+            let editor = egui::Id::unique(EDITOR_ID);
+            assert!(h.ctx.memory(|m| m.has_focus(editor)));
+        }
+
+        #[test]
+        fn format_button_and_undo() {
+            let mut h = harness();
+            h.ctx.set_theme(ThemePreference::Light);
+            let src = "ÎNCEPUT\nREPETĂ 4 ORI\nJOS\nDACĂ E_MARGINE ATUNCI SUS ALTFEL JOS\nSFÎRȘIT REPETĂ\nSFÎRȘIT\n";
+            let formatted = "ÎNCEPUT\nREPETĂ 4 ORI\n    JOS\n    DACĂ E_MARGINE ATUNCI\n        SUS\n    ALTFEL\n        JOS\nSFÎRȘIT REPETĂ\nSFÎRȘIT\n";
+            h.state_mut().s.code = src.into();
+            // Cursorul după SUS rămâne după SUS, acum pe rândul lui.
+            let at = src[..src.find(" ALTFEL").unwrap()].chars().count();
+            h.state_mut().cursor = Some(at..at);
+            h.run_steps(2);
+            h.get_by_label("⇥  Formatează").click();
+            h.run_steps(2);
+            assert_eq!(h.state().s.code, formatted);
+            let at = formatted[..formatted.find("\n    ALTFEL").unwrap()]
+                .chars()
+                .count();
+            assert_eq!(h.state().cursor, Some(at..at));
+            let editor = egui::Id::unique(EDITOR_ID);
+            assert!(h.ctx.memory(|m| m.has_focus(editor)));
+            shot(&mut h, "9-formatted");
+
+            // Formatarea se anulează cu un singur Ctrl+Z.
+            h.key_press_modifiers(Modifiers::COMMAND, Key::Z);
+            h.run_steps(2);
+            assert_eq!(h.state().s.code, src);
+
+            h.key_press_modifiers(Modifiers::COMMAND | Modifiers::SHIFT, Key::F);
+            h.run_steps(2);
+            assert_eq!(h.state().s.code, formatted);
         }
 
         #[test]

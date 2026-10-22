@@ -84,7 +84,7 @@ OpenGL 2.0, ca să meargă și pe calculatoarele mai vechi din laboratoare.
 |---|---|
 | **Interfață** | temă luminoasă și întunecată, siglă și iconiță noi; interfața în română, rusă și engleză |
 | **Furnica** | desenată vectorial: clară la orice mărime, se rotește lin și își mișcă picioarele când merge |
-| **Editor** | numerotarea rândurilor, evidențierea sintaxei, butoane care inserează comenzile (procedura se pune automat înainte de `ÎNCEPUT`) |
+| **Editor** | numerotarea rândurilor, evidențierea sintaxei, butoane care inserează comenzile (procedura se pune automat înainte de `ÎNCEPUT`), variante propuse în timp ce scrii, indentare automată la Enter, formatare |
 | **Execuție** | animație fluidă, rândul curent evidențiat, drumul furnicii desenat pe tabelă; pas cu pas, pauză, viteză reglabilă sau instant |
 | **Analizor** | programul e verificat în timp ce scrii, cu sugestii de corectură ([detalii](#analizorul-de-cod)) |
 | **Blocuri** | se pot pune oricum unul în altul (în original `REPETĂ` nu putea conține alt `REPETĂ`, iar `CÎT` alt `CÎT`) |
@@ -151,6 +151,7 @@ din fișierele `romana.lng`, `engleza.lng` și `rusa.lng` ale programului origin
 | **F6** | pas cu pas |
 | **Esc** | stop |
 | **F7** | verifică |
+| **Ctrl+Shift+F** | formatează (indentare, DACĂ / ALTFEL pe rânduri separate) |
 | **Ctrl+N / Ctrl+O / Ctrl+S** | nou / deschide / salvează |
 
 ---

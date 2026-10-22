@@ -84,7 +84,7 @@ works on older school lab computers.
 |---|---|
 | **Interface** | light and dark theme, new logo and icon; interface in Romanian, Russian and English |
 | **The ant** | vector-drawn: sharp at any size, turns smoothly and moves its legs as it walks |
-| **Editor** | line numbers, syntax highlighting, buttons that insert commands (a procedure is placed before `BEGIN` automatically) |
+| **Editor** | line numbers, syntax highlighting, buttons that insert commands (a procedure is placed before `BEGIN` automatically), suggestions while typing, auto-indent on Enter, formatting |
 | **Running** | smooth animation, the current line highlighted, the ant's path drawn on the table; step by step, pause, adjustable speed or instant |
 | **Analyzer** | the program is checked as you type, with suggested fixes ([details](#code-analyzer)) |
 | **Blocks** | can be nested freely (in the original `REPEAT` could not contain another `REPEAT`, nor `WHILE` another `WHILE`) |
@@ -155,6 +155,7 @@ original program.
 | **F6** | step |
 | **Esc** | stop |
 | **F7** | check |
+| **Ctrl+Shift+F** | format (indentation, IF / ELSE on separate lines) |
 | **Ctrl+N / Ctrl+O / Ctrl+S** | new / open / save (⌘ on macOS) |
 
 ---
