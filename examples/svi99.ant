@@ -10,15 +10,15 @@ Ant executor file
 8 9 i
 666 666 *
 procedura pina_jos
-cit nu_e_margine executa
-jos
-sfirsit cit
+    cit nu_e_margine executa
+        jos
+    sfirsit cit
 sfirsit procedura
 
 procedura litera_sus
-repeta 8 ori
-sus
-sfirsit repeta
+    repeta 8 ori
+        sus
+    sfirsit repeta
 sfirsit procedura
 
 inceput
@@ -34,7 +34,7 @@ stinga
 pina_jos
 
 repeta 3 ori
-dreapta
+    dreapta
 sfirsit repeta
 
 litera_sus
@@ -43,13 +43,13 @@ dreapta
 sus
 
 repeta 3 ori
-stinga
+    stinga
 sfirsit repeta
 
 pina_jos
 
 repeta 5 ori
-dreapta
+    dreapta
 sfirsit repeta
 
 litera_sus
@@ -58,29 +58,29 @@ dreapta
 sus
 
 repeta 5 ori
-stinga
+    stinga
 sfirsit repeta
 
 dreapta
 
 repeta 5 ori
-jos
+    jos
 sfirsit repeta
 
 stinga
 repeta 4 ori
-sus
+    sus
 sfirsit repeta
 
 repeta 5 ori
-jos
+    jos
 sfirsit repeta
 
 dreapta
 dreapta
 
 repeta 5 ori
-sus
+    sus
 sfirsit repeta
 
 dreapta

@@ -16,31 +16,31 @@ Ant executor file
 // de aceea fiecare procedură începe cu un pas.
 
 PROCEDURA jos_pina_la_margine
-JOS
-CÎT NU_E_MARGINE EXECUTĂ
     JOS
-SFÎRȘIT CÎT
+    CÎT NU_E_MARGINE EXECUTĂ
+        JOS
+    SFÎRȘIT CÎT
 SFÎRȘIT PROCEDURA
 
 PROCEDURA dreapta_pina_la_margine
-DREAPTA
-CÎT NU_E_MARGINE EXECUTĂ
     DREAPTA
-SFÎRȘIT CÎT
+    CÎT NU_E_MARGINE EXECUTĂ
+        DREAPTA
+    SFÎRȘIT CÎT
 SFÎRȘIT PROCEDURA
 
 PROCEDURA sus_pina_la_margine
-SUS
-CÎT NU_E_MARGINE EXECUTĂ
     SUS
-SFÎRȘIT CÎT
+    CÎT NU_E_MARGINE EXECUTĂ
+        SUS
+    SFÎRȘIT CÎT
 SFÎRȘIT PROCEDURA
 
 PROCEDURA stinga_pina_la_margine
-STÎNGA
-CÎT NU_E_MARGINE EXECUTĂ
     STÎNGA
-SFÎRȘIT CÎT
+    CÎT NU_E_MARGINE EXECUTĂ
+        STÎNGA
+    SFÎRȘIT CÎT
 SFÎRȘIT PROCEDURA
 
 ÎNCEPUT

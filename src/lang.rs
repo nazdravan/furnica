@@ -1424,6 +1424,14 @@ mod tests {
     }
 
     #[test]
+    fn examples_are_formatted() {
+        for (name, src) in crate::app::EXAMPLES {
+            let code = crate::antfile::parse(src).code;
+            assert_eq!(format_program(&code), code, "exemplul {name} nu este formatat");
+        }
+    }
+
+    #[test]
     fn completion_context() {
         let src = "PROCEDURA Patrat\nSUS\nSFÎRȘIT PROCEDURA\nprocedura Linie\nREPEAT 2\nCIT NU_E_MARGINE EXECUTA\nJOS\nEND WHILE\n";
         assert_eq!(procedure_names(src), vec!["Patrat", "Linie"]);

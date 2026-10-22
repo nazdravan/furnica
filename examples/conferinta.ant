@@ -15,20 +15,20 @@ Ant executor file
 1 10 *
 666 666 *
 procedura pina_jos
-cit nu_e_margine executa
-jos
-sfirsit cit
+    cit nu_e_margine executa
+        jos
+    sfirsit cit
 sfirsit procedura
 
 procedura litera_sus
-repeta 8 ori
-sus
-sfirsit repeta
+    repeta 8 ori
+        sus
+    sfirsit repeta
 sfirsit procedura
 
 inceput
 repeta 2 ori
-dreapta
+    dreapta
 sfirsit repeta
 
 litera_sus
@@ -37,7 +37,7 @@ dreapta
 sus
 
 repeta 2 ori
-stinga
+    stinga
 sfirsit repeta
 
 dreapta
@@ -51,13 +51,13 @@ dreapta
 sus
 
 repeta 2 ori
-stinga
+    stinga
 sfirsit repeta
 
 pina_jos
 
 repeta 3 ori
-dreapta
+    dreapta
 sfirsit repeta
 
 litera_sus
@@ -66,13 +66,13 @@ dreapta
 sus
 
 repeta 3 ori
-stinga
+    stinga
 sfirsit repeta
 
 pina_jos
 
 repeta 4 ori
-dreapta
+    dreapta
 sfirsit repeta
 
 litera_sus
@@ -81,11 +81,11 @@ dreapta
 sus
 
 repeta 4 ori
-stinga
+    stinga
 sfirsit repeta
 
 repeta 3 ori
-dreapta
+    dreapta
 sfirsit repeta
 
 pina_jos
@@ -98,7 +98,7 @@ dreapta
 sus
 
 repeta 4 ori
-stinga
+    stinga
 sfirsit repeta
 pina_jos
 dreapta
@@ -110,7 +110,7 @@ stinga
 pina_jos
 
 repeta 6 ori
-stinga
+    stinga
 sfirsit repeta
 
 sus
@@ -120,14 +120,14 @@ jos
 dreapta
 
 repeta 7 ori
-sus
+    sus
 sfirsit repeta
 
 stinga
 sus
 
 repeta 4 ori
-dreapta
+    dreapta
 sfirsit repeta
 
 jos
@@ -137,38 +137,38 @@ sus
 pina_jos
 
 repeta 6 ori
-stinga
+    stinga
 sfirsit repeta
 
 repeta 3 ori
-sus
+    sus
 sfirsit repeta
 
 repeta 6 ori
-dreapta
+    dreapta
 sfirsit repeta
 
 jos
 dreapta
 
 repeta 6 ori
-sus
+    sus
 sfirsit repeta
 
 pina_jos
 repeta 3 ori
-stinga
+    stinga
 sfirsit repeta
 
 repeta 7 ori
-sus
+    sus
 sfirsit repeta
 
 stinga
 sus
 
 repeta 4 ori
-dreapta
+    dreapta
 sfirsit repeta
 jos
 dreapta
