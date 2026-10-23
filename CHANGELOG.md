@@ -5,6 +5,20 @@
 Modificările importante din fiecare versiune. Numerotarea urmează
 [Semantic Versioning](https://semver.org/lang/ro/).
 
+## [3.0.3] — 2026-10-23
+
+### Adăugat
+
+- Instalatorul `.msi` pentru Windows: dosarul de instalare se poate schimba,
+  iar o bifă (implicit bifată) creează scurtătura Furnica pe desktop. Fără
+  ferestre: `msiexec /i furnica-*.msi /qn INSTALLFOLDER="D:\Furnica"
+  DESKTOPSHORTCUT=""`.
+
+### Schimbat
+
+- Ferestrele instalatorului `.msi` sunt în română, fără pagina cu licența.
+- O versiune nouă se instalează în dosarul ales la instalarea precedentă.
+
 ## [3.0.2] — 2026-10-23
 
 ### Adăugat
@@ -68,6 +82,7 @@ modificări.
 - Tabela se editează direct pe ea, între 3 × 3 și 20 × 20 de celule.
 - Pachete pentru Windows (inclusiv Windows 7), Linux și macOS.
 
+[3.0.3]: https://github.com/nazdravan/furnica/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/nazdravan/furnica/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/nazdravan/furnica/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/nazdravan/furnica/releases/tag/v3.0.0
