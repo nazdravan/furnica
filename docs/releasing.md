@@ -77,7 +77,7 @@ creează niciun release. Așa se pot încerca pachetele înainte de a mări vers
 | `furnica-<v>-linux-x86_64.deb` | Ubuntu / Debian / Mint (Ubuntu 22.04+), cu meniu și asocierea fișierelor `.ant` | `packaging/linux/deb.sh`, ubuntu-22.04 |
 | `furnica-<v>-linux-x86_64.tar.gz` | Linux pe 64 de biți, arhivă simplă | `packaging/linux/package.sh`, ubuntu-22.04 |
 | `furnica-<v>-macos-universal.dmg` | macOS 10.13+, Apple Silicon și Intel (`Furnica.app`) | `packaging/macos/package.sh`, macos-latest |
-| `furnica-<v>-windows-x64.msi` | Windows 10/11 pe 64 de biți, instalator: meniul Start, asocierea fișierelor `.ant`, actualizare peste versiunea veche | `packaging/windows/msi.ps1 -Arch x64` (WiX Toolset v5) |
+| `furnica-<v>-windows-x64.msi` | Windows 10/11 pe 64 de biți, instalator: dosarul ales la instalare, meniul Start, scurtătura de pe desktop (opțională), asocierea fișierelor `.ant`, actualizare peste versiunea veche | `packaging/windows/msi.ps1 -Arch x64` (WiX Toolset v5) |
 | `furnica-<v>-windows-x86.msi` | Windows 10/11 pe 32 de biți, instalator | `packaging/windows/msi.ps1 -Arch x86` |
 | `furnica-<v>-windows-x64-portable.zip` | Windows 10/11 pe 64 de biți | `packaging/windows/package.ps1 -Arch x64` |
 | `furnica-<v>-windows-x86-portable.zip` | Windows 10/11 pe 32 de biți | `packaging/windows/package.ps1 -Arch x86` |

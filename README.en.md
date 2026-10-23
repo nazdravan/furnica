@@ -49,9 +49,12 @@ SHA256SUMS.txt                                  # checksums
 
 On each platform:
 
-- **Windows:** the `.msi` installs Furnica into *Program Files* with a Start
-  menu shortcut, and `.ant` files open with a double click (for many
-  computers: `msiexec /i furnica-*.msi /qn`). Without installing: unzip the
+- **Windows:** the `.msi` installs Furnica into *Program Files* or another
+  folder chosen during setup, with a Start menu shortcut and, if ticked, a
+  desktop shortcut, and `.ant` files open with a double click. A new version
+  installs into the same folder. For many computers:
+  `msiexec /i furnica-*.msi /qn`, adding `INSTALLFOLDER="D:\Furnica"` for
+  another folder and `DESKTOPSHORTCUT=""` for no desktop shortcut. Without installing: unzip the
   archive and run `Furnica.exe`;
 - **Linux:** make the AppImage executable and run it
   (`chmod +x furnica-*.AppImage && ./furnica-*.AppImage`); on Ubuntu / Debian
