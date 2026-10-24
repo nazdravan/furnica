@@ -270,6 +270,9 @@ pub struct FurnicaApp {
     /// Editorul primește selecția `cursor` și focusul după ce e desenat
     /// (click-ul pe un buton i-ar lua focusul în același cadru).
     focus_editor: bool,
+    /// Editorul se derulează la început: alt program a fost încărcat, iar
+    /// derularea rămasă de la cel vechi l-ar ascunde pe cel nou, mai scurt.
+    scroll_top: bool,
     /// Variantele propuse în timp ce elevul scrie.
     completion: Option<Completion>,
 }
@@ -381,6 +384,7 @@ impl FurnicaApp {
             analyzed: None,
             jump_to: None,
             focus_editor: false,
+            scroll_top: false,
             completion: None,
         };
         app.apply_theme(&cc.egui_ctx);
@@ -654,6 +658,7 @@ impl FurnicaApp {
         self.s.code = file.code;
         self.s.table = file.table;
         self.cursor = None;
+        self.scroll_top = true;
         self.s.dirty = false;
         self.reset();
     }
@@ -1397,11 +1402,13 @@ impl FurnicaApp {
                     .corner_radius(10)
                     .inner_margin(Margin::same(4))
                     .show(ui, |ui| {
-                        egui::ScrollArea::both()
-                            .auto_shrink([false, false])
-                            .show(ui, |ui| {
-                                self.code_editor(ui, &pal, editable, title);
-                            });
+                        let mut area = egui::ScrollArea::both().auto_shrink([false, false]);
+                        if std::mem::take(&mut self.scroll_top) {
+                            area = area.scroll_offset(Vec2::ZERO);
+                        }
+                        area.show(ui, |ui| {
+                            self.code_editor(ui, &pal, editable, title);
+                        });
                     });
             });
     }
@@ -2639,6 +2646,9 @@ fn setup_style(ctx: &egui::Context) {
         v.hyperlink_color = Color32::from_rgb(0xF0, 0x8A, 0x3C);
     });
 }
+
+#[cfg(test)]
+mod demo;
 
 #[cfg(test)]
 mod tests {
