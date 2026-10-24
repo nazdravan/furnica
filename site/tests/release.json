@@ -1,0 +1,57 @@
+{
+ "assets": [
+  {
+   "name": "furnica-3.0.4-linux-x86_64.AppImage",
+   "size": 7526904,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/furnica-3.0.4-linux-x86_64.AppImage"
+  },
+  {
+   "name": "furnica-3.0.4-linux-x86_64.deb",
+   "size": 5146296,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/furnica-3.0.4-linux-x86_64.deb"
+  },
+  {
+   "name": "furnica-3.0.4-linux-x86_64.tar.gz",
+   "size": 7138602,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/furnica-3.0.4-linux-x86_64.tar.gz"
+  },
+  {
+   "name": "furnica-3.0.4-macos-universal.dmg",
+   "size": 10781196,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/furnica-3.0.4-macos-universal.dmg"
+  },
+  {
+   "name": "furnica-3.0.4-windows-x64-portable.zip",
+   "size": 5191237,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/furnica-3.0.4-windows-x64-portable.zip"
+  },
+  {
+   "name": "furnica-3.0.4-windows-x64.msi",
+   "size": 4456448,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/furnica-3.0.4-windows-x64.msi"
+  },
+  {
+   "name": "furnica-3.0.4-windows-x86-portable.zip",
+   "size": 5096137,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/furnica-3.0.4-windows-x86-portable.zip"
+  },
+  {
+   "name": "furnica-3.0.4-windows-x86.msi",
+   "size": 4431872,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/furnica-3.0.4-windows-x86.msi"
+  },
+  {
+   "name": "furnica-3.0.4-windows7-x86-portable.zip",
+   "size": 23306091,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/furnica-3.0.4-windows7-x86-portable.zip"
+  },
+  {
+   "name": "SHA256SUMS.txt",
+   "size": 907,
+   "url": "https://github.com/nazdravan/furnica/releases/download/v3.0.4/SHA256SUMS.txt"
+  }
+ ],
+ "publishedAt": "2026-10-24T12:43:59Z",
+ "tagName": "v3.0.4",
+ "url": "https://github.com/nazdravan/furnica/releases/tag/v3.0.4"
+}

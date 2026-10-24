@@ -5,3 +5,5 @@
 /Furnica/
 
 .env
+/_site
+__pycache__/
