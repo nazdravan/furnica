@@ -1219,7 +1219,7 @@ dependencies = [
 
 [[package]]
 name = "furnica"
-version = "3.0.4"
+version = "3.0.5"
 dependencies = [
  "eframe",
  "egui",
