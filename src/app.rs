@@ -1148,7 +1148,13 @@ impl FurnicaApp {
                         if ui.button(format!("❓  {}", t.help)).clicked() {
                             self.show_help = !self.show_help;
                         }
-                        ui.menu_button(format!("⚙  {}", t.settings), |ui| self.settings_menu(ui));
+                        // Setările rămân deschise cât timp se bifează; se închid la click în afară.
+                        egui::containers::menu::MenuButton::new(format!("⚙  {}", t.settings))
+                            .config(
+                                egui::containers::menu::MenuConfig::new()
+                                    .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside),
+                            )
+                            .ui(ui, |ui| self.settings_menu(ui));
                         ui.menu_button(format!("🌐  {}", self.s.lang.name()), |ui| {
                             for l in Lang::ALL {
                                 ui.selectable_value(&mut self.s.lang, l, l.name());
@@ -2314,6 +2320,25 @@ impl FurnicaApp {
                     ui.label(RichText::new(t.shortcuts).color(pal.muted));
                     ui.add_space(6.0);
                     ui.label(RichText::new(t.about).color(pal.muted));
+                    ui.add_space(10.0);
+                    ui.separator();
+                    ui.add_space(4.0);
+                    ui.horizontal_wrapped(|ui| {
+                        ui.label(RichText::new(format!("{}:", t.author)).color(pal.muted));
+                        ui.label(RichText::new("Nicolae Postica").strong());
+                    });
+                    ui.horizontal_wrapped(|ui| {
+                        ui.hyperlink_to(
+                            RichText::new("nicolae.postica2@gmail.com").underline(),
+                            "mailto:nicolae.postica2@gmail.com",
+                        );
+                        ui.label(RichText::new("·").color(pal.muted));
+                        ui.hyperlink_to(
+                            RichText::new("github.com/nazdravan/furnica").underline(),
+                            "https://github.com/nazdravan/furnica",
+                        );
+                    });
+                    ui.add_space(4.0);
                     ui.label(
                         RichText::new(concat!("v", env!("CARGO_PKG_VERSION")))
                             .color(pal.muted)
@@ -2671,6 +2696,37 @@ mod tests {
         fn load(h: &mut Harness<'_, FurnicaApp>, example: usize) {
             h.state_mut().set_file(antfile::parse(EXAMPLES[example].1));
             h.run_steps(2);
+        }
+
+        #[test]
+        fn settings_stay_open_after_checkbox() {
+            let mut h = harness();
+            h.run_steps(3);
+            h.get_by_label("⚙  Setări").click();
+            h.run_steps(3);
+            let grid = h.state().s.show_grid;
+            h.get_by_label("Arată grila").click();
+            h.run_steps(3);
+            assert_eq!(h.state().s.show_grid, !grid);
+            h.get_by_label("Arată drumul furnicii").click();
+            h.run_steps(3);
+            assert!(
+                h.query_by_label("Arată grila").is_some(),
+                "setările s-au închis"
+            );
+        }
+
+        #[test]
+        fn help_shows_author_links_apart() {
+            let mut h = harness();
+            h.ctx.set_theme(ThemePreference::Light);
+            h.state_mut().show_help = true;
+            h.run_steps(3);
+            h.get_by_role_and_label(egui::accesskit::Role::Link, "nicolae.postica2@gmail.com");
+            h.get_by_role_and_label(egui::accesskit::Role::Link, "github.com/nazdravan/furnica")
+                .scroll_to_me();
+            h.run_steps(3);
+            shot(&mut h, "help-author");
         }
 
         #[test]
