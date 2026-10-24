@@ -132,6 +132,12 @@ impl Rec<'_> {
         self.click_at(at);
     }
 
+    /// Mausul pe butonul cu exact acest text, fără click: butonul se aprinde cât timp vocea îl numește.
+    fn hover(&mut self, label: &str) {
+        let at = self.h.get_by_label(label).rect().center();
+        self.move_to(at);
+    }
+
     /// Trage glisorul Viteza până la valoarea `v` (1–10).
     fn drag_speed(&mut self, v: f32) {
         let rect = self.h.get_by_role(egui::accesskit::Role::Slider).rect();
@@ -154,6 +160,21 @@ impl Rec<'_> {
                 pressed,
                 repeat: false,
                 modifiers: Modifiers::default(),
+            });
+        }
+        self.tick();
+        self.wait(0.12);
+    }
+
+    /// Tasta cu Ctrl (Cmd pe macOS), de exemplu Ctrl+A.
+    fn command_key(&mut self, key: Key) {
+        for pressed in [true, false] {
+            self.event(Event::Key {
+                key,
+                physical_key: None,
+                pressed,
+                repeat: false,
+                modifiers: Modifiers::COMMAND,
             });
         }
         self.tick();
@@ -250,43 +271,69 @@ fn scenario(r: &mut Rec<'_>) {
     r.click_on("Execută");
 
     // Tabela: furnica trasă cu mausul, literele scrise de la tastatură.
-    r.at("p03", 0.0);
+    // Momentele din paragraf sunt ale cuvintelor din voce (Whisper pe voice.mp3).
+    r.at("p04", 0.0);
     r.until_idle();
     r.click_on("Nou");
-    r.wait(0.6);
+    r.at("p04", 2.3);
     r.drag_ant((0, 0), (1, 5));
+    r.at("p04", 4.5);
     r.write((3, 5), "A");
+    r.at("p04", 7.4);
     r.write((5, 2), "BC");
 
-    // Primul program: de patru ori DREAPTA, numai din butoane.
-    r.at("p05", 0.0);
+    // Mărimea tabelei, din Setări.
+    r.at("p05", 1.0);
+    r.click_on("Setări");
+    r.at("p05", 2.2);
+    // Eticheta și glisorul poartă același nume; mausul merge pe glisor.
+    let cols = r.h.get_all_by_label("Coloane").last().unwrap().rect().center();
+    r.move_to(cols);
+    r.at("p05", 4.6);
+    r.key(Key::Escape);
+
+    // Comenzile, arătate cât sunt numite.
+    for (b, t) in [("SUS", 1.1), ("JOS", 1.8), ("STÎNGA", 2.4), ("DREAPTA", 3.0)] {
+        r.at("p06", t);
+        r.hover(b);
+    }
+
+    // Primul program: de patru ori DREAPTA, numai din butoane; apoi celelalte comenzi.
+    r.at("p07", 1.3);
     for b in ["REPETĂ N", "DREAPTA"] {
         r.click(b);
         r.wait(0.8);
     }
+    for (b, t) in [("REPETĂ N", 5.7), ("CÎT", 6.4), ("DACĂ", 8.0), ("PROCEDURA", 10.8)] {
+        r.at("p07", t);
+        r.hover(b);
+    }
+    r.wait(0.6);
 
     // Execuția: încet, ca să se vadă rândul curent și litera împinsă.
-    r.at("p06", 0.3);
     r.drag_speed(2.0);
+    r.at("p08", 0.6);
     r.click_on("Execută");
-    r.at("p07", 0.0);
+    r.at("p09", 0.0);
     r.until_idle();
     r.drag_speed(5.0);
     r.click_on("Resetare");
-    r.wait(0.6);
+    r.at("p09", 2.6);
     for _ in 0..4 {
         r.click_on("Pas cu pas");
         r.wait(0.9);
     }
+    // „tabela de pornire rămâne neschimbată”
+    r.at("p09", 8.3);
+    r.click_on("Resetare");
 
     // Greșeli: furnica împinge B în C și se oprește.
-    r.at("p08", 0.0);
-    r.click_on("Resetare");
+    r.at("p10", 0.0);
     r.drag_ant((1, 5), (3, 2));
     r.click_on("Execută");
 
-    // Analizorul: DREAPTA devine DREAPTE, apoi „Corectează”.
-    r.at("p09", 0.0);
+    // Analizorul: DREAPTA devine DREAPTE, apoi „Corectează” când e numit.
+    r.at("p11", 0.0);
     r.until_idle();
     // Click la dreapta de textul rândului cu DREAPTA: cursorul ajunge la capătul lui.
     let editor =
@@ -307,23 +354,60 @@ fn scenario(r: &mut Rec<'_>) {
     r.type_text("E");
     r.wait(1.2);
     r.shot("typo");
+    r.at("p11", 6.6);
+    let fix = r.h.get_by_label_contains("Corectează").rect().center();
+    r.move_to(fix);
+    r.at("p11", 8.8);
     r.click_on("Corectează");
 
-    // Final: „conferinta” din nou, pe tema întunecată.
-    r.wait(1.0);
+    // Editorul: variantele propuse la „cit”, apoi un program lipit strâmb și „Formatează”.
+    r.at("p12", 0.0);
     r.h.state_mut().s.dirty = false;
-    r.click_on("Setări");
-    r.click_on("Întunecată");
-    r.key(Key::Escape);
+    r.click_on("Nou");
+    let editor =
+        r.h.get_by_role(egui::accesskit::Role::MultilineTextInput)
+            .rect();
+    r.click_at(pos2(
+        editor.left() + 80.0,
+        editor.top() + 6.0 + LINE_H * 1.5,
+    ));
+    r.at("p12", 2.3);
+    r.type_text("cit");
+    r.wait(1.2);
+    r.shot("completion");
+    r.key(Key::Enter);
+    r.at("p12", 5.5);
+    r.command_key(Key::A);
+    r.event(Event::Paste(PASTED.into()));
+    r.tick();
+    r.shot("pasted");
+    r.at("p12", 9.8);
+    r.click_on("Formatează");
+    r.shot("formatted");
+
+    // Limbi: exemplele în engleză și în rusă, interfața în engleză, tema întunecată.
+    r.at("p13", 0.9);
+    r.h.state_mut().s.dirty = false;
     r.click_on("Exemple");
-    r.click("Conferința");
+    r.click("Borders (EN)");
+    r.click_on("Exemple");
+    r.click("Края (RU)");
+    r.at("p13", 5.4);
+    r.click_on("Română");
+    r.click("English");
+    r.click_on("Settings");
+    r.click_on("Dark");
+    r.key(Key::Escape);
     r.click_on("Instant");
-    r.click_on("Execută");
+    r.click_on("Run");
     r.move_to(pos2(SIZE.x - 40.0, SIZE.y - 60.0));
-    while r.now() < r.duration + 1.5 {
+    while r.now() < r.duration + 3.0 {
         r.tick();
     }
 }
+
+/// Programul „copiat din altă parte”: corect, dar fără indentare.
+const PASTED: &str = "PROCEDURA ocol\nCÎT NU_E_MARGINE EXECUTĂ\nDREAPTA\nSFÎRȘIT CÎT\nSFÎRȘIT PROCEDURA\nÎNCEPUT\nREPETĂ 2 ORI\nEXECUTĂ ocol\nDACĂ E_MARGINE ATUNCI JOS ALTFEL SUS\nSFÎRȘIT REPETĂ\nSFÎRȘIT\n";
 
 #[test]
 #[ignore = "înregistrează demo-ul video; vezi antetul fișierului"]
@@ -341,7 +425,7 @@ fn demo() {
         .build_eframe(|cc| FurnicaApp::new(cc, None));
     h.ctx.set_theme(ThemePreference::Light);
     h.state_mut().s.theme = ThemeChoice::Light;
-    h.state_mut().s.speed = 8.0;
+    h.state_mut().s.speed = 7.0;
     h.state_mut().s.instant = false;
     h.run_steps(3);
 
