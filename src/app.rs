@@ -2323,21 +2323,35 @@ impl FurnicaApp {
                     ui.add_space(10.0);
                     ui.separator();
                     ui.add_space(4.0);
-                    ui.horizontal_wrapped(|ui| {
-                        ui.label(RichText::new(format!("{}:", t.author)).color(pal.muted));
-                        ui.label(RichText::new("Nicolae Postica").strong());
-                    });
-                    ui.horizontal_wrapped(|ui| {
-                        ui.hyperlink_to(
-                            RichText::new("nicolae.postica2@gmail.com").underline(),
-                            "mailto:nicolae.postica2@gmail.com",
-                        );
-                        ui.label(RichText::new("·").color(pal.muted));
-                        ui.hyperlink_to(
-                            RichText::new("github.com/nazdravan/furnica").underline(),
-                            "https://github.com/nazdravan/furnica",
-                        );
-                    });
+                    egui::Grid::new("author")
+                        .num_columns(2)
+                        .spacing([10.0, 6.0])
+                        .show(ui, |ui| {
+                            ui.label(RichText::new(format!("{}:", t.author)).color(pal.muted));
+                            ui.label(RichText::new("Nicolae Postica").strong());
+                            ui.end_row();
+                            for (label, text, url) in [
+                                (
+                                    t.website,
+                                    "https://nazdravan.github.io/furnica/",
+                                    "https://nazdravan.github.io/furnica/",
+                                ),
+                                (
+                                    t.email,
+                                    "nicolae.postica2@gmail.com",
+                                    "mailto:nicolae.postica2@gmail.com",
+                                ),
+                                (
+                                    t.source,
+                                    "https://github.com/nazdravan/furnica",
+                                    "https://github.com/nazdravan/furnica",
+                                ),
+                            ] {
+                                ui.label(RichText::new(format!("{label}:")).color(pal.muted));
+                                ui.hyperlink_to(RichText::new(text).underline(), url);
+                                ui.end_row();
+                            }
+                        });
                     ui.add_space(4.0);
                     ui.label(
                         RichText::new(concat!("v", env!("CARGO_PKG_VERSION")))
@@ -2718,15 +2732,30 @@ mod tests {
 
         #[test]
         fn help_shows_author_links_apart() {
-            let mut h = harness();
-            h.ctx.set_theme(ThemePreference::Light);
-            h.state_mut().show_help = true;
-            h.run_steps(3);
-            h.get_by_role_and_label(egui::accesskit::Role::Link, "nicolae.postica2@gmail.com");
-            h.get_by_role_and_label(egui::accesskit::Role::Link, "github.com/nazdravan/furnica")
-                .scroll_to_me();
-            h.run_steps(3);
-            shot(&mut h, "help-author");
+            for (lang, labels) in [
+                (Lang::Ro, ["Pagina web:", "Email:", "Cod sursă:"]),
+                (Lang::En, ["Website:", "Email:", "Source:"]),
+                (Lang::Ru, ["Сайт:", "Почта:", "Исходный код:"]),
+            ] {
+                let mut h = harness();
+                h.ctx.set_theme(ThemePreference::Light);
+                h.state_mut().s.lang = lang;
+                h.state_mut().show_help = true;
+                h.run_steps(3);
+                for l in labels {
+                    h.get_by_label(l);
+                }
+                for link in [
+                    "https://nazdravan.github.io/furnica/",
+                    "nicolae.postica2@gmail.com",
+                    "https://github.com/nazdravan/furnica",
+                ] {
+                    h.get_by_role_and_label(egui::accesskit::Role::Link, link)
+                        .scroll_to_me();
+                }
+                h.run_steps(3);
+                shot(&mut h, &format!("help-author-{lang:?}"));
+            }
         }
 
         /// Programul unui exemplu cu cuvintele și procedurile în limba `lang`.
