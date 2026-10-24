@@ -2830,7 +2830,7 @@ mod tests {
 
                 // Literele scrise direct pe tabelă.
                 let mut h = harness();
-                h.ctx.set_theme(ThemePreference::Dark);
+                h.ctx.set_theme(ThemePreference::Light);
                 h.state_mut().s.lang = lang;
                 h.state_mut().set_file(antfile::AntFile {
                     table: Table::default(),
