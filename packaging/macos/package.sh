@@ -20,18 +20,19 @@ name=$APP-$VERSION-macos-universal
 stage=$ROOT/dist/stage/$name
 app=$stage/Furnica.app
 rm -rf "$stage" "$OUT/$name.dmg"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$stage/Exemple" "$OUT"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$OUT"
 lipo -create -output "$app/Contents/MacOS/furnica" \
     target/aarch64-apple-darwin/release/furnica target/x86_64-apple-darwin/release/furnica
 sed -e "s/@VERSION@/$VERSION/g" -e "s/@MIN_MACOS@/$MACOSX_DEPLOYMENT_TARGET/g" \
     packaging/macos/Info.plist >"$app/Contents/Info.plist"
 cp assets/furnica.icns "$app/Contents/Resources/furnica.icns"
-cp examples/*.ant "$stage/Exemple/"
-cp README.md LICENSE packaging/macos/CITESTE.txt "$stage/"
-cp assets/fonts/LICENSE.txt "$stage/LICENTE.txt"
+# În fereastra .dmg-ului rămân doar aplicația și Applications; licențele
+# merg în aplicație, iar exemplele sunt deja în program (meniul Exemple).
+cp LICENSE "$app/Contents/Resources/LICENSE.txt"
+cp assets/fonts/LICENSE.txt "$app/Contents/Resources/LICENTE.txt"
 
 # Semnătură ad-hoc: fără ea, pe Apple Silicon aplicația nici nu pornește.
-# Nu înlocuiește semnarea cu un certificat Apple Developer (vezi CITESTE.txt).
+# Nu înlocuiește semnarea cu un certificat Apple Developer (vezi README, secțiunea macOS).
 codesign --force --deep --sign - "$app"
 codesign --verify --deep --strict "$app"
 lipo -info "$app/Contents/MacOS/furnica"
