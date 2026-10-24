@@ -16,7 +16,7 @@
 [![Linux](https://img.shields.io/badge/Linux-AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](packaging/linux/)
 [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-000000?style=flat-square&logo=apple&logoColor=white)](#macos)
 
-[**Быстрый старт**](#быстрый-старт) · [Язык](#язык) · [Анализатор кода](#анализатор-кода) · [Формат файлов](#формат-файлов) · [Изменения](CHANGELOG.ru.md) · [Releases](../../releases) · [Issues](../../issues)
+[**Сайт**](https://nazdravan.github.io/furnica/ru/) · [Быстрый старт](#быстрый-старт) · [Язык](#язык) · [Анализатор кода](#анализатор-кода) · [Формат файлов](#формат-файлов) · [Изменения](CHANGELOG.ru.md) · [Releases](../../releases) · [Issues](../../issues)
 
 [Română](README.md) · [English](README.en.md) · **Русский**
 
@@ -28,7 +28,7 @@
 которую используют в школах Молдовы и Румынии. Файлы `.ant` из старой версии
 открываются и выполняются без изменений.
 
-<img src="docs/assets/screenshot.png" alt="Furnica: пример «conferinta» после выполнения" />
+<img src="docs/assets/screenshot-ru.png" alt="Furnica: пример «conferinta» после выполнения" />
 
 ## Быстрый старт
 
@@ -96,7 +96,7 @@ OpenGL 2.0, чтобы программа работала и на старых 
 
 ### Редактирование таблицы
 
-<img src="docs/assets/editare.png" alt="Ввод букв на таблице" />
+<img src="docs/assets/editare-ru.png" alt="Ввод букв на таблице" />
 
 - **муравья** перемещают перетаскиванием (клетка назначения подсвечивается
   зелёным или красным), а щелчок по нему поворачивает его;
@@ -166,7 +166,7 @@ OpenGL 2.0, чтобы программа работала и на старых 
 
 ## Анализатор кода
 
-<img src="docs/assets/analizor.png" alt="Анализатор кода с ошибками и подсказками" />
+<img src="docs/assets/analizor-ru.png" alt="Анализатор кода с ошибками и подсказками" />
 
 Программа анализируется при каждом изменении (это можно выключить в
 *Настройках*; тогда анализ запускается кнопкой **Проверить** / F7). Анализатор

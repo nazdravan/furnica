@@ -16,7 +16,7 @@
 [![Linux](https://img.shields.io/badge/Linux-AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](packaging/linux/)
 [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-000000?style=flat-square&logo=apple&logoColor=white)](#macos)
 
-[**Quick start**](#quick-start) · [The language](#the-language) · [Code analyzer](#code-analyzer) · [File format](#file-format) · [Changelog](CHANGELOG.en.md) · [Releases](../../releases) · [Issues](../../issues)
+[**Website**](https://nazdravan.github.io/furnica/en/) · [Quick start](#quick-start) · [The language](#the-language) · [Code analyzer](#code-analyzer) · [File format](#file-format) · [Changelog](CHANGELOG.en.md) · [Releases](../../releases) · [Issues](../../issues)
 
 [Română](README.md) · **English** · [Русский](README.ru.md)
 
@@ -28,7 +28,7 @@ A **Rust** rewrite of the original “Furnica” program (Ant v2.00, 1999), used
 in schools in Moldova and Romania. `.ant` files from the old version open and
 run unchanged. *Furnica* is Romanian for “ant”.
 
-<img src="docs/assets/screenshot.png" alt="Furnica: the “conferinta” example after running" />
+<img src="docs/assets/screenshot-en.png" alt="Furnica: the “conferinta” example after running" />
 
 ## Quick start
 
@@ -96,7 +96,7 @@ works on older school lab computers.
 
 ### Editing the table
 
-<img src="docs/assets/editare.png" alt="Typing letters on the table" />
+<img src="docs/assets/editare-en.png" alt="Typing letters on the table" />
 
 - **the ant** is moved by dragging (the target cell turns green or red), and a
   click on it turns it;
@@ -165,7 +165,7 @@ original program.
 
 ## Code analyzer
 
-<img src="docs/assets/analizor.png" alt="The code analyzer with errors and suggestions" />
+<img src="docs/assets/analizor-en.png" alt="The code analyzer with errors and suggestions" />
 
 The program is analyzed on every change (this can be turned off in
 *Settings*; then analysis runs with **Check** / F7). The analyzer doesn't stop

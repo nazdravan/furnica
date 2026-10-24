@@ -2729,6 +2729,128 @@ mod tests {
             shot(&mut h, "help-author");
         }
 
+        /// Programul unui exemplu cu cuvintele și procedurile în limba `lang`.
+        fn translate(src: &str, lang: Lang) -> String {
+            const WORDS: &[[&str; 3]] = &[
+                ["PROCEDURA", "procedure", "процедура"],
+                ["INCEPUT", "begin", "начало"],
+                ["SFIRSIT", "end", "конец"],
+                ["REPETA", "repeat", "повтори"],
+                ["ORI", "times", "раз"],
+                ["CIT", "while", "пока"],
+                ["EXECUTA", "do", "сделай"],
+                ["NU_E_MARGINE", "not_border", "не_край"],
+                ["SUS", "up", "вверх"],
+                ["JOS", "down", "вниз"],
+                ["STINGA", "left", "влево"],
+                ["DREAPTA", "right", "вправо"],
+                ["PINA_JOS", "to_bottom", "до_низа"],
+                ["LITERA_SUS", "letter_up", "букву_вверх"],
+            ];
+            let i = match lang {
+                Lang::Ro => return src.to_string(),
+                Lang::En => 1,
+                Lang::Ru => 2,
+            };
+            let mut out = String::new();
+            let mut word = String::new();
+            let flush = |word: &mut String, out: &mut String| {
+                let n = lang::normalize(word);
+                match WORDS.iter().find(|w| w[0] == n) {
+                    Some(w) => out.push_str(w[i]),
+                    None => out.push_str(word),
+                }
+                word.clear();
+            };
+            for c in src.chars() {
+                if c.is_alphanumeric() || c == '_' {
+                    word.push(c);
+                } else {
+                    flush(&mut word, &mut out);
+                    out.push(c);
+                }
+            }
+            flush(&mut word, &mut out);
+            out
+        }
+
+        /// Capturile pentru pagina web, în fiecare limbă:
+        /// `FURNICA_SHOTS=docs/assets cargo test --release site_screenshots`.
+        #[test]
+        fn site_screenshots() {
+            let cases = [
+                (
+                    Lang::Ro,
+                    "",
+                    "ÎNCEPUT\nSFÎRȘIT\n",
+                    "PROCEDURA PinaJos\nCÎT NU_E_MARGINE EXECUTĂ\n    JSO\nSFÎRȘIT CÎT\nSFÎRȘIT PROCEDURA\n\nÎNCEPUT\nDRAPTA\nPinaJso\nSFÎRȘIT\n",
+                ),
+                (
+                    Lang::En,
+                    "-en",
+                    "BEGIN\nEND\n",
+                    "PROCEDURE ToBottom\nWHILE NOT_BORDER DO\n    DOWM\nEND WHILE\nEND PROCEDURE\n\nBEGIN\nRIGTH\nToBotom\nEND\n",
+                ),
+                (
+                    Lang::Ru,
+                    "-ru",
+                    "НАЧАЛО\nКОНЕЦ\n",
+                    "ПРОЦЕДУРА ДоНиза\nПОКА НЕ_КРАЙ СДЕЛАЙ\n    ВНИЭ\nКОНЕЦ ПОКА\nКОНЕЦ ПРОЦЕДУРА\n\nНАЧАЛО\nВПРАВА\nДоНза\nКОНЕЦ\n",
+                ),
+            ];
+            for (lang, suffix, empty, bad) in cases {
+                // Exemplul original „conferinta”, executat.
+                let mut h = harness();
+                h.ctx.set_theme(ThemePreference::Light);
+                h.state_mut().s.lang = lang;
+                load(&mut h, 1);
+                let code = translate(&h.state().s.code, lang);
+                h.state_mut().s.code = code;
+                h.state_mut().s.instant = true;
+                h.run_steps(3);
+                h.state_mut().start(Mode::Running);
+                run_until_idle(&mut h);
+                assert!(matches!(h.state().status, Status::Finished), "{lang:?}");
+                assert_eq!(h.state().world.table.row(0).trim(), "conferinta");
+                shot(&mut h, &format!("screenshot{suffix}"));
+
+                // Analizorul: trei cuvinte scrise greșit și o procedură nefolosită.
+                let mut h = harness();
+                h.ctx.set_theme(ThemePreference::Light);
+                h.state_mut().s.lang = lang;
+                h.state_mut().set_file(antfile::AntFile {
+                    table: Table::default(),
+                    code: bad.into(),
+                });
+                h.run_steps(3);
+                let errs: Vec<usize> = h.state().analysis.errors.iter().map(|e| e.line).collect();
+                assert_eq!(errs, vec![3, 8, 9], "{lang:?}");
+                assert_eq!(h.state().analysis.warnings.len(), 1, "{lang:?}");
+                shot(&mut h, &format!("analizor{suffix}"));
+
+                // Literele scrise direct pe tabelă.
+                let mut h = harness();
+                h.ctx.set_theme(ThemePreference::Dark);
+                h.state_mut().s.lang = lang;
+                h.state_mut().set_file(antfile::AntFile {
+                    table: Table::default(),
+                    code: empty.into(),
+                });
+                h.run_steps(2);
+                let p = at(&h, (2, 3));
+                click(&mut h, p, egui::PointerButton::Primary);
+                h.event(egui::Event::Text("ABC".into()));
+                h.run_steps(1);
+                h.key_press(Key::Enter);
+                h.run_steps(1);
+                h.event(egui::Event::Text("DE".into()));
+                h.run_steps(2);
+                assert_eq!(h.state().s.table.row(3), "  ABC     ");
+                assert_eq!(h.state().s.table.row(4), "  DE      ");
+                shot(&mut h, &format!("editare{suffix}"));
+            }
+        }
+
         #[test]
         fn run_original_example_and_keep_result() {
             let mut h = harness();
