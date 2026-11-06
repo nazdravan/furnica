@@ -83,7 +83,7 @@ The notable changes in each version. Versions follow
 - The command buttons are on two rows: the moves first, then the other
   commands.
 
-## [3.0.0] — 2026-10-20
+## [3.0.0] — 2025-02-01
 
 The first version rewritten in Rust, based on the original “Furnica” program
 (Ant v2.00, 1999). `.ant` files from the old version open and run unchanged.

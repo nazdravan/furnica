@@ -84,7 +84,7 @@ Modificările importante din fiecare versiune. Numerotarea urmează
 - Butoanele de comenzi sunt pe două rânduri: întâi deplasările, apoi
   celelalte comenzi.
 
-## [3.0.0] — 2026-10-20
+## [3.0.0] — 2025-02-01
 
 Prima versiune rescrisă în Rust după programul original „Furnica” (Ant v2.00,
 1999). Fișierele `.ant` din versiunea veche se deschid și rulează fără
