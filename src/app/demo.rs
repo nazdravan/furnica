@@ -29,6 +29,8 @@ struct Rec<'a> {
     duration: f64,
     /// Eticheta cu linkul (link.png din dosarul demo-ului) și de când apare.
     link: Option<(image::RgbaImage, f64)>,
+    /// Short-ul vertical: cadrul se recompune din bucăți (vezi `Vertical`).
+    vertical: Option<Vertical>,
 }
 
 impl Rec<'_> {
@@ -45,6 +47,9 @@ impl Rec<'_> {
             if fade > 0.0 {
                 blend(&mut img, link, fade);
             }
+        }
+        if let Some(v) = &self.vertical {
+            img = v.compose(&img, self.now(), &self.h);
         }
         self.ff
             .stdin
@@ -469,8 +474,170 @@ fn demo() {
             .map(|i| (i.to_rgba8(), paras.last().unwrap().1)),
         paras,
         duration,
+        vertical: None,
     };
     scenario(&mut r);
+    drop(r.ff.stdin.take());
+    assert!(r.ff.wait().unwrap().success());
+}
+
+// ---------------------------------------------------------------------------
+// Shorts: ghicitori verticale „Va reuși furnica?”.
+//
+// FURNICA_SHORT=<dosar> cargo test --release short -- --ignored --nocapture
+//
+// Dosarul are: program.txt (codul), short.txt (cols=, rows=, speed=, ant=x,y,
+// letters=A@x,y;B@x,y — celulele de la 0), voice.mp3 și voice.json (p01 întrebarea,
+// p02 răspunsul), question.png și answer.png (banda de sus, 1080×BAND). Programul e
+// afișat de la început; la p02 pornește execuția. Cadrul vertical 1080×1920: banda
+// (întrebarea, apoi răspunsul), sub ea codul, jos tabela, decupate din interfața reală
+// randată la scară dublă, ca textul să rămână clar.
+
+const SHORT_PPP: f32 = 3.0;
+const VW: u32 = 1080;
+const VH: u32 = 1920;
+const BAND: u32 = 300;
+const CODE_MAX: u32 = 640;
+const PAPER: image::Rgba<u8> = image::Rgba([0xF7, 0xF1, 0xE8, 0xFF]);
+
+struct Vertical {
+    question: image::RgbaImage,
+    answer: image::RgbaImage,
+    answer_from: f64,
+    /// Rândurile de cod afișate (restul editorului e gol).
+    lines: usize,
+}
+
+impl Vertical {
+    fn compose(&self, frame: &image::RgbaImage, t: f64, h: &Harness<'_, FurnicaApp>) -> image::RgbaImage {
+        use image::imageops::{overlay, resize, FilterType};
+        let px = |r: Rect| {
+            let x = (r.left() * SHORT_PPP).max(0.0) as u32;
+            let y = (r.top() * SHORT_PPP).max(0.0) as u32;
+            let w = ((r.width() * SHORT_PPP) as u32).min(frame.width() - x);
+            let hh = ((r.height() * SHORT_PPP) as u32).min(frame.height() - y);
+            image::imageops::crop_imm(frame, x, y, w, hh).to_image()
+        };
+        let mut out = image::RgbaImage::from_pixel(VW, VH, PAPER);
+        let band = if t >= self.answer_from { &self.answer } else { &self.question };
+        overlay(&mut out, band, 0, 0);
+
+        // codul: partea de sus a editorului, cât ocupă programul
+        let ed = h.get_by_role(egui::accesskit::Role::MultilineTextInput).rect();
+        let ed = Rect::from_min_size(ed.min, vec2(ed.width(), 4.0 + LINE_H * self.lines as f32));
+        let code = px(ed);
+        // pe toată lățimea, dar nu mai înalt de CODE_MAX: un program lung se micșorează
+        let (mut cw, mut ch) = (VW - 80, code.height() * (VW - 80) / code.width());
+        if ch > CODE_MAX {
+            (cw, ch) = (code.width() * CODE_MAX / code.height(), CODE_MAX);
+        }
+        overlay(&mut out, &resize(&code, cw, ch, FilterType::Triangle), ((VW - cw) / 2) as i64, (BAND + 30) as i64);
+
+        // tabela, cu o margine pentru numerotare; dedesubt e textul de ajutor, care rămâne afară
+        let st = h.state();
+        let (origin, cell) = st.field_geom;
+        let size = vec2(st.world.table.width as f32, st.world.table.height as f32) * cell;
+        let f = Rect::from_min_size(origin, size);
+        let field = px(Rect::from_min_max(f.min - vec2(30.0, 30.0), f.max + vec2(30.0, 8.0)));
+        let top = BAND + 30 + ch + 40;
+        let room_h = VH - top - 60;
+        let fw = (VW - 80).min(field.width() * room_h / field.height());
+        let fh = field.height() * fw / field.width();
+        overlay(&mut out, &resize(&field, fw, fh, FilterType::Triangle), ((VW - fw) / 2) as i64, (top + (room_h - fh) / 2) as i64);
+        out
+    }
+}
+
+/// Valoarea câmpului `cheie=valoare` din short.txt.
+fn short_val<'a>(text: &'a str, key: &str) -> Option<&'a str> {
+    text.lines()
+        .filter_map(|l| l.split_once('='))
+        .find(|(k, _)| k.trim() == key)
+        .map(|(_, v)| v.trim())
+}
+
+/// Celula `x,y`.
+fn short_cell(v: &str) -> (i32, i32) {
+    let (x, y) = v.split_once(',').unwrap();
+    (x.trim().parse().unwrap(), y.trim().parse().unwrap())
+}
+
+#[test]
+#[ignore = "înregistrează un Short vertical; vezi comentariul de mai sus"]
+fn short() {
+    let dir = std::path::PathBuf::from(
+        std::env::var("FURNICA_SHORT").expect("FURNICA_SHORT = dosarul Short-ului"),
+    );
+    let read = |f: &str| std::fs::read_to_string(dir.join(f)).unwrap();
+    let (paras, duration) = read_voice(&read("voice.json"));
+    let cfg = read("short.txt");
+    let code = read("program.txt");
+    let png = |f: &str| image::open(dir.join(f)).unwrap().to_rgba8();
+    let num = |key: &str, default: f32| short_val(&cfg, key).map_or(default, |v| v.parse().unwrap());
+
+    let mut table = Table::new(num("cols", 10.0) as i32, num("rows", 10.0) as i32);
+    if let Some(v) = short_val(&cfg, "ant") {
+        assert!(table.place_ant(short_cell(v)) || table.ant == short_cell(v));
+    }
+    for l in short_val(&cfg, "letters").unwrap_or("").split(';').filter(|l| !l.is_empty()) {
+        let (c, at) = l.split_once('@').unwrap();
+        assert!(table.set(short_cell(at), c.chars().next()));
+    }
+
+    let mut h = Harness::builder()
+        .with_size(SIZE)
+        .with_pixels_per_point(SHORT_PPP)
+        .with_step_dt((1.0 / FPS) as f32)
+        .wgpu()
+        .build_eframe(|cc| FurnicaApp::new(cc, None));
+    h.ctx.set_theme(ThemePreference::Light);
+    {
+        let app = h.state_mut();
+        app.s.theme = ThemeChoice::Light;
+        app.s.speed = num("speed", 5.0);
+        app.s.instant = false;
+        app.s.table = table;
+        app.s.code = code.clone();
+        app.s.dirty = false;
+        app.reset();
+    }
+    h.run_steps(3);
+
+    let ff = Command::new("ffmpeg")
+        .args(["-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgba"])
+        .args(["-s", &format!("{VW}x{VH}"), "-r", &FPS.to_string(), "-i", "-"])
+        .arg("-i")
+        .arg(dir.join("voice.mp3"))
+        .args(["-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p"])
+        .args(["-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart"])
+        .arg(dir.join("video.mp4"))
+        .stdin(Stdio::piped())
+        .spawn()
+        .expect("ffmpeg");
+    let answer_from = paras.iter().find(|(p, _)| p == "p02").unwrap().1;
+    let mut r = Rec {
+        h,
+        ff,
+        frame: 0,
+        mouse: pos2(SIZE.x * 0.6, SIZE.y * 0.6),
+        link: None,
+        paras,
+        duration,
+        vertical: Some(Vertical {
+            question: png("question.png"),
+            answer: png("answer.png"),
+            answer_from,
+            lines: code.lines().count(),
+        }),
+    };
+    // Execuția pornește odată cu răspunsul.
+    r.at("p02", 0.0);
+    r.click_on("Execută");
+    r.shot("run");
+    while r.now() < r.duration + 1.0 {
+        r.tick();
+    }
+    r.shot("end");
     drop(r.ff.stdin.take());
     assert!(r.ff.wait().unwrap().success());
 }
