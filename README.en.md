@@ -20,6 +20,12 @@
 
 [Română](README.md) · **English** · [Русский](README.ru.md)
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=WsKpRjqqIhI"><img src="docs/assets/video.jpg" alt="Video: how to work with Furnica" width="640"></a>
+  <br />
+  <sub>▶ How to work with Furnica, in a few minutes. The video is in Romanian.</sub>
+</p>
+
 </div>
 
 <br />
@@ -29,12 +35,6 @@ in schools in Moldova and Romania. `.ant` files from the old version open and
 run unchanged. *Furnica* is Romanian for “ant”.
 
 <img src="docs/assets/screenshot-en.png" alt="Furnica: the “conferinta” example after running" />
-
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=WsKpRjqqIhI"><img src="docs/assets/video.jpg" alt="Video: how to work with Furnica" width="640"></a>
-  <br />
-  <sub>▶ How to work with Furnica, in a few minutes. The video is in Romanian.</sub>
-</p>
 
 ## Quick start
 
