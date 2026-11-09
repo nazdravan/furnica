@@ -168,7 +168,7 @@ p { margin: 0; }
 
 /* Videoclipul, în dreapta textului din hero */
 .hero-video { margin: 0; }
-.hero-video .video { margin-top: 0; }
+.hero-video .video { margin-top: 0; border: 1px solid rgba(20, 20, 20, 0.18); }
 .hero-video figcaption { margin-top: 12px; font-size: var(--step-small); color: var(--soft); }
 .video {
   position: relative;
