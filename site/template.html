@@ -60,7 +60,7 @@
              data-kinds="{{ kinds_json }}"
              data-label-windows="{{ btn_windows }}" data-label-win7="{{ btn_win7 }}" data-label-mac="{{ btn_mac }}" data-label-linux="{{ btn_linux }}">{{{ btn_default }}}</a>
           <a class="cta-other" href="#descarca">{{{ btn_other }}} ↓</a>
-          <a class="cta-other" href="https://www.youtube.com/watch?v=WsKpRjqqIhI">▶ {{{ btn_video }}}</a>
+          <a class="cta-other" href="#video">▶ {{{ btn_video }}}</a>
         </div>
         <p class="version">{{{ hero_version }}} {{ version }} · {{{ hero_free }}}</p>
       </div>
@@ -87,6 +87,17 @@
         <div class="feature-text"><h3>{{{ f3_title }}}</h3><p>{{{ f3_text }}}</p></div>
         <figure class="crop" style="--x: 430; --y: 55; --w: 850; --h: 672"><img src="{{ root }}assets/screenshot{{ shot }}.png" width="1280" height="800" alt="{{ f3_alt }}" loading="lazy"></figure>
       </div>
+    </div>
+  </section>
+
+  <section id="video" class="video-section">
+    <div class="wrap">
+      <h2 data-reveal>{{{ video_title }}}</h2>
+      <p class="section-lead" data-reveal>{{{ video_lead }}}</p>
+      <a class="video" href="https://www.youtube.com/watch?v=WsKpRjqqIhI" data-video="WsKpRjqqIhI" data-title="{{ video_iframe_title }}" aria-label="{{ video_play }}" data-reveal>
+        <img src="{{ root }}assets/video.jpg" width="1280" height="720" alt="" loading="lazy">
+        <span class="play" aria-hidden="true"></span>
+      </a>
     </div>
   </section>
 
