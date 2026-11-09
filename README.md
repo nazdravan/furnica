@@ -29,6 +29,12 @@ Fișierele `.ant` din versiunea veche se deschid și rulează fără modificări
 
 <img src="docs/assets/screenshot.png" alt="Furnica: exemplul „conferinta” după execuție" />
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=WsKpRjqqIhI"><img src="docs/assets/video.jpg" alt="Videoclip: cum se lucrează cu Furnica" width="640"></a>
+  <br />
+  <sub>▶ Cum se lucrează cu Furnica, în câteva minute.</sub>
+</p>
+
 ## Pornire rapidă
 
 Arhivele gata construite sunt pe pagina [Releases](../../releases):

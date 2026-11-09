@@ -30,6 +30,12 @@
 
 <img src="docs/assets/screenshot-ru.png" alt="Furnica: пример «conferinta» после выполнения" />
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=WsKpRjqqIhI"><img src="docs/assets/video.jpg" alt="Видео: как работать с Furnica" width="640"></a>
+  <br />
+  <sub>▶ Как работать с Furnica — за несколько минут. Видео на румынском языке.</sub>
+</p>
+
 ## Быстрый старт
 
 Готовые пакеты — на странице [Releases](../../releases):
