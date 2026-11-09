@@ -20,6 +20,12 @@
 
 **Română** · [English](README.en.md) · [Русский](README.ru.md)
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=WsKpRjqqIhI"><img src="docs/assets/video.jpg" alt="Videoclip: cum se lucrează cu Furnica" width="640"></a>
+  <br />
+  <sub>▶ Cum se lucrează cu Furnica, în câteva minute.</sub>
+</p>
+
 </div>
 
 <br />
