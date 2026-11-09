@@ -16,7 +16,7 @@
 [![Linux](https://img.shields.io/badge/Linux-AppImage-FCC624?style=flat-square&logo=linux&logoColor=black)](packaging/linux/)
 [![macOS](https://img.shields.io/badge/macOS-Apple%20Silicon%20%7C%20Intel-000000?style=flat-square&logo=apple&logoColor=white)](#macos)
 
-[**Website**](https://nazdravan.github.io/furnica/en/) · [Quick start](#quick-start) · [The language](#the-language) · [Code analyzer](#code-analyzer) · [File format](#file-format) · [Changelog](CHANGELOG.en.md) · [Releases](../../releases) · [Issues](../../issues)
+[**Website**](https://nazdravan.github.io/furnica/en/) · [Video (in Romanian)](https://www.youtube.com/watch?v=WsKpRjqqIhI) · [Quick start](#quick-start) · [The language](#the-language) · [Code analyzer](#code-analyzer) · [File format](#file-format) · [Changelog](CHANGELOG.en.md) · [Releases](../../releases) · [Issues](../../issues)
 
 [Română](README.md) · **English** · [Русский](README.ru.md)
 
