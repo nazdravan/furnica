@@ -339,4 +339,8 @@ fereastră. Cu `FURNICA_SHOTS=<dosar> cargo test` se salvează și capturi de ec
 
 Furnica 3 este software liber, distribuit sub licența
 [GNU General Public License, versiunea 3](LICENSE) sau, la alegere, orice
-versiune ulterioară.
+versiune ulterioară. Copyright © 2024 Nicolae Postica.
+
+Fonturile incluse (Noto Sans, Fira Code și fonturile egui) și crate-urile Rust au licențele lor,
+enumerate în [NOTICE](NOTICE). Fiecare pachet conține `NOTICE`, licențele fonturilor și
+`THIRD-PARTY.txt`, cu textul complet al licenței fiecărui crate.

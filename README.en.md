@@ -344,4 +344,8 @@ screenshots (the ones in `docs/assets/` were made this way).
 
 Furnica 3 is free software, distributed under the
 [GNU General Public License, version 3](LICENSE) or, at your option, any later
-version.
+version. Copyright © 2024 Nicolae Postica.
+
+The bundled fonts (Noto Sans, Fira Code and egui's fonts) and the Rust crates have their own
+licences, listed in [NOTICE](NOTICE). Every package carries `NOTICE`, the font licences and
+`THIRD-PARTY.txt` with the full licence text of each crate.
