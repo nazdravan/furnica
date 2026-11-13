@@ -15,6 +15,13 @@ mod world;
 use std::path::PathBuf;
 
 fn main() -> eframe::Result {
+    // `--check-update` arată ce găsește o verificare, fără fereastră.
+    if let Some(code) = app_update::run_cli(&app::FURNICA) {
+        std::process::exit(code);
+    }
+    // Șterge resturile unei actualizări anterioare.
+    app_update::cleanup(&app::FURNICA);
+
     #[cfg(windows)]
     let software = software_gl::enable_if_requested();
 
