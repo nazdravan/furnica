@@ -5,7 +5,7 @@
 Важные изменения в каждой версии. Нумерация следует
 [Semantic Versioning](https://semver.org/lang/ru/).
 
-## [Не выпущено]
+## [3.0.6] — 2026-11-14
 
 ### Добавлено
 
@@ -109,6 +109,9 @@
 - Таблица редактируется прямо на ней, от 3 × 3 до 20 × 20 клеток.
 - Пакеты для Windows (включая Windows 7), Linux и macOS.
 
+[3.0.6]: https://github.com/nazdravan/furnica/compare/v3.0.5...v3.0.6
+[3.0.5]: https://github.com/nazdravan/furnica/compare/v3.0.4...v3.0.5
+[3.0.4]: https://github.com/nazdravan/furnica/compare/v3.0.3...v3.0.4
 [3.0.3]: https://github.com/nazdravan/furnica/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/nazdravan/furnica/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/nazdravan/furnica/compare/v3.0.0...v3.0.1

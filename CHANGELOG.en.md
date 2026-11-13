@@ -5,7 +5,7 @@
 The notable changes in each version. Versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [3.0.6] — 2026-11-14
 
 ### Added
 
@@ -108,6 +108,9 @@ The first version rewritten in Rust, based on the original “Furnica” program
 - The table is edited directly on it, from 3 × 3 to 20 × 20 cells.
 - Packages for Windows (including Windows 7), Linux and macOS.
 
+[3.0.6]: https://github.com/nazdravan/furnica/compare/v3.0.5...v3.0.6
+[3.0.5]: https://github.com/nazdravan/furnica/compare/v3.0.4...v3.0.5
+[3.0.4]: https://github.com/nazdravan/furnica/compare/v3.0.3...v3.0.4
 [3.0.3]: https://github.com/nazdravan/furnica/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/nazdravan/furnica/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/nazdravan/furnica/compare/v3.0.0...v3.0.1
