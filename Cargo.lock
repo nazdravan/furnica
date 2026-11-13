@@ -181,7 +181,7 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 [[package]]
 name = "app-update"
 version = "0.1.0"
-source = "git+https://github.com/nazdravan/app-update?rev=713840c5c33cf9c63bee3ccb512f92bd76b31d4d#713840c5c33cf9c63bee3ccb512f92bd76b31d4d"
+source = "git+https://github.com/nazdravan/app-update?rev=6119c8105db159226fa5e0764e22f6b315965b00#6119c8105db159226fa5e0764e22f6b315965b00"
 dependencies = [
  "egui",
  "flate2",
