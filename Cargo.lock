@@ -1289,7 +1289,7 @@ dependencies = [
 
 [[package]]
 name = "furnica"
-version = "3.0.5"
+version = "3.0.6"
 dependencies = [
  "app-update",
  "eframe",
